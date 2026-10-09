@@ -427,7 +427,7 @@ footer .heart{color:#f87171}
 <section class="block" id="score">
   <span class="sec-tag reveal">SCORE · 六维评分</span>
   <h2 class="sec-title reveal">一张雷达图看懂能力轮廓</h2>
-  <p class="sec-desc reveal">从编程开发、办公文档、创意设计、易上手、生态丰富、性价比六个维度打分（满分 5 分）。点击上方按钮切换工具。</p>
+  <p class="sec-desc reveal">从编程开发、办公文档、创意设计、易上手、生态丰富、性价比六个维度打分（满分 5 分，4 分已属优秀）。四款其实都在优秀线之上，差异主要体现在定位侧重，而非高低。点击上方按钮切换工具。</p>
 
   <div class="tabs reveal" id="tabs">
     <button class="tab active" style="--c:var(--codex)" data-key="codex">Codex</button>
@@ -693,10 +693,10 @@ document.querySelectorAll('.reveal').forEach(el => rObs.observe(el));
 /* ===== 六维评分雷达图 ===== */
 const dims = ['编程开发', '办公文档', '创意设计', '易上手', '生态丰富', '性价比'];
 const radarData = {
-  codex:  { color: '#10b981', scores: [5, 2.5, 2,   5, 3.5, 4  ] },
-  claude: { color: '#e8825a', scores: [4, 4.5, 4.5, 4, 3.5, 3  ] },
-  trae:   { color: '#8b5cf6', scores: [5, 2.5, 2.5, 3, 4,   3.5] },
-  wb:     { color: '#3b82f6', scores: [4, 5,   4,   4.5, 5, 4.5] }
+  codex:  { color: '#10b981', scores: [5,   4,   4,   5,   3.5, 4  ] },
+  claude: { color: '#e8825a', scores: [5,   5,   5,   4,   4,   3.5] },
+  trae:   { color: '#8b5cf6', scores: [5,   3,   4,   4,   4,   4  ] },
+  wb:     { color: '#3b82f6', scores: [4,   5,   4.5, 4.5, 5,   4.5] }
 };
 const radar = document.getElementById('radar');
 const barsEl = document.getElementById('bars');
