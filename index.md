@@ -1,5 +1,5 @@
 ---
-title:ai
+title: ai
 ---
 #我已经装好了codex,workbuddy,claude,Trae ,在体验几个不同的AI agent 后我的使用截图！
 ## 这是我装的软件截图：
