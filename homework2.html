@@ -231,7 +231,9 @@ tbody tr:hover{background:rgba(255,195,18,.08)}
 /* 徽章收集 */
 .badges{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:6px 0 8px}
 .badge-medal{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--muted)}
-.badge-medal .disc{width:60px;height:60px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe89a,var(--gold) 60%,var(--gold-d));border:3px solid var(--dark);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 5px 0 rgba(47,53,66,.25);animation:bob 3s ease-in-out infinite}
+.badge-medal .disc{width:78px;height:78px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff6cf,#ffe08a 70%,#f5c65e);border:3px solid var(--dark);display:flex;align-items:center;justify-content:center;box-shadow:0 5px 0 rgba(47,53,66,.25);animation:bob 3s ease-in-out infinite}
+.badge-medal .disc.z{border-color:#e05252}.badge-medal .disc.o{border-color:#2fb84f}
+.badge-medal .disc img{height:80px;width:auto;display:block;object-fit:contain;filter:drop-shadow(0 3px 3px rgba(31,61,77,.2))}
 .badge-medal:nth-child(2) .disc{animation-delay:-.7s}.badge-medal:nth-child(3) .disc{animation-delay:-1.4s}.badge-medal:nth-child(4) .disc{animation-delay:-2.1s}
 
 /* ===== 对比 ===== */
@@ -437,10 +439,10 @@ footer .heart{color:var(--ball)}
       <canvas id="lossCanvas"></canvas>
       <div class="prob-panel">
         <h5>四只奶蛙的觉醒度（预测概率）</h5>
-        <div class="prob-row one" data-i="1"><span class="lab">焰尾 01→1</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
-        <div class="prob-row one" data-i="2"><span class="lab">雷耳 10→1</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
-        <div class="prob-row zero" data-i="0"><span class="lab">泡泡 00→0</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
-        <div class="prob-row zero" data-i="3"><span class="lab">岩甲 11→0</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
+        <div class="prob-row one" data-i="1"><span class="lab">奶狗 01→1</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
+        <div class="prob-row one" data-i="2"><span class="lab">奶蛋 10→1</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
+        <div class="prob-row zero" data-i="0"><span class="lab">奶蛙 00→0</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
+        <div class="prob-row zero" data-i="3"><span class="lab">奶鼠 11→0</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
         <div style="margin-top:14px;font-size:12px;color:var(--muted);text-align:center;font-weight:700">绿族应→1，红族应→0</div>
       </div>
     </div>
@@ -454,8 +456,8 @@ footer .heart{color:var(--ball)}
       <h5>📈 四只奶蛙觉醒度的完整成长轨迹（真实数据，每轮一个点）</h5>
       <canvas id="probCurveCanvas"></canvas>
       <div class="probcurve-legend">
-        <span><i style="background:#17c964"></i>焰尾 / 雷耳（应逼近 1）</span>
-        <span><i style="background:#ef5350"></i>泡泡 / 岩甲（应逼近 0）</span>
+        <span><i style="background:#17c964"></i>奶狗 / 奶蛋（应逼近 1）</span>
+        <span><i style="background:#ef5350"></i>奶蛙 / 奶鼠（应逼近 0）</span>
       </div>
     </div>
   </div>
@@ -501,7 +503,7 @@ footer .heart{color:var(--ball)}
   <div class="stage-head">
     <span class="stage-badge reveal">STAGE 06 <span class="gem">◆</span> 必杀技演算</span>
     <h2 class="sec-title reveal">奶蛙是怎么"想"出答案的？</h2>
-    <p class="sec-desc reveal">用<b>特训后学到的真实权重</b>，手算一遍奶蛙「焰尾 01 → 应判为 1」的完整思考过程。每一步的数字都与下方结果表完全吻合。</p>
+    <p class="sec-desc reveal">用<b>特训后学到的真实权重</b>，手算一遍奶蛙「奶狗 01 → 应判为 1」的完整思考过程。每一步的数字都与下方结果表完全吻合。</p>
   </div>
   <div class="panel-dark fp-wrap reveal">
     <div class="fp-head">
@@ -527,10 +529,10 @@ footer .heart{color:var(--ball)}
     <p class="sec-desc reveal">奶蛙进化完成！两个框架（TensorFlow / PyTorch，float64，seed=7）在本地真实跑出的结果完全一致。</p>
   </div>
   <div class="badges reveal">
-    <div class="badge-medal"><span class="disc">🔴</span>泡泡 00→0 ✓</div>
-    <div class="badge-medal"><span class="disc">🟢</span>焰尾 01→1 ✓</div>
-    <div class="badge-medal"><span class="disc">🟢</span>雷耳 10→1 ✓</div>
-    <div class="badge-medal"><span class="disc">🔴</span>岩甲 11→0 ✓</div>
+    <div class="badge-medal"><span class="disc z"><img src="naifwa0.png" alt="奶蛙"></span>奶蛙 00→0 ✓</div>
+    <div class="badge-medal"><span class="disc o"><img src="naigou.png" alt="奶狗"></span>奶狗 01→1 ✓</div>
+    <div class="badge-medal"><span class="disc o"><img src="naidan.png" alt="奶蛋"></span>奶蛋 10→1 ✓</div>
+    <div class="badge-medal"><span class="disc z"><img src="naishu.png" alt="奶鼠"></span>奶鼠 11→0 ✓</div>
   </div>
   <div class="result-grid reveal">
     <div class="panel result-card">
