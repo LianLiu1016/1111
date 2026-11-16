@@ -1427,5 +1427,52 @@ codeTabs.forEach(t=>t.addEventListener('click',()=>{
 })();
 
 </script>
+
+<!-- 小可爱出没层：四只奶系列在各板块时不时探头、漂浮、缩回（纯装饰，不遮挡正文） -->
+<style>
+.pet-pop{position:absolute;pointer-events:none;z-index:2;width:var(--pw,64px);height:auto;opacity:0;transform-origin:bottom center;filter:drop-shadow(0 5px 6px rgba(31,61,77,.22));animation:petPeek var(--pd,8s) ease-in-out var(--pdl,0s) infinite;will-change:transform,opacity}
+@keyframes petPeek{
+  0%   {opacity:0;transform:translate(0,26px) scale(.72) rotate(-5deg)}
+  10%  {opacity:.96;transform:translate(0,0) scale(1) rotate(-3deg)}
+  28%  {opacity:.96;transform:translate(7px,-9px) scale(1.05) rotate(3deg)}
+  45%  {opacity:.96;transform:translate(-5px,-2px) scale(1) rotate(-2deg)}
+  58%  {opacity:.96;transform:translate(0,0) scale(1) rotate(0deg)}
+  70%  {opacity:0;transform:translate(0,22px) scale(.75) rotate(4deg)}
+  100% {opacity:0;transform:translate(0,26px) scale(.72) rotate(-5deg)}
+}
+@media(max-width:640px){.pet-pop{--pw:40px!important;animation:none;opacity:.9;transform:rotate(-4deg)}}
+</style>
+<script>
+(function(){
+  var pets=['naifwa0.png','naigou.png','naidan.png','naishu.png'];
+  var n=0;
+  function spawn(parent,side,topPct,px){
+    if(!parent) return;
+    var im=document.createElement('img');
+    im.className='pet-pop';
+    im.src=pets[n++ % pets.length];
+    im.alt='';
+    im.setAttribute('aria-hidden','true');
+    im.style[side]=(2+Math.random()*7).toFixed(1)+'%';
+    im.style.top=topPct+'%';
+    im.style.setProperty('--pw',px+'px');
+    im.style.setProperty('--pd',(6.5+Math.random()*4).toFixed(1)+'s');
+    im.style.setProperty('--pdl',(-Math.random()*11).toFixed(1)+'s');
+    if(window.getComputedStyle(parent).position==='static') parent.style.position='relative';
+    parent.appendChild(im);
+  }
+  // 首屏角落放三只
+  var hero=document.querySelector('.hero');
+  if(hero){ spawn(hero,'left',72,72); spawn(hero,'right',60,60); spawn(hero,'right',16,50); }
+  // 各板块边缘错落出现
+  var secs=document.querySelectorAll('section.block');
+  var tops=[14,34,58,20,46,12,38,26,16,44,30];
+  for(var i=0;i<secs.length;i++){
+    var side=(i%2===0)?'left':'right';
+    spawn(secs[i],side,tops[i%tops.length],52+Math.floor(Math.random()*22));
+    if(i%4===2){ spawn(secs[i], side==='left'?'right':'left', 80, 46); }
+  }
+})();
+</script>
 </body>
 </html>
