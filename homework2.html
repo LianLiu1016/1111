@@ -3,257 +3,298 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>作业2 · 用 MLP 教会机器异或 · 一次完整的神经网络训练</title>
-<meta name="description" content="用 2-2-1 多层感知机训练异或运算的完整过程：真实训练数据、可拖动的决策边界、可播放的训练动画、真实权重的逐步前向传播，以及 TensorFlow/PyTorch 双框架代码。">
+<title>作业2 · 奶蛙训练道馆 · 用 MLP 教会奶蛙「异或」</title>
+<meta name="description" content="一场奶蛙养成冒险：训练一只叫「奶蛙」的 MLP，用 2-2-1 神经网络学会异或。真实训练数据、可玩的决策边界挑战、训练回放、权重进化和双框架代码。">
 <style>
 :root{
-  --sky:#c9e4f7; --grass:#d7eec4;
-  --bg:#eef6f9; --bg2:#eaf6f0;
-  --panel:#ffffff; --panel-border:#d5e8dd;
-  --text:#1f4a5e; --muted:#5f8290;
-  --accent:#38bdf8; --accent2:#0ea5e9;
-  --green:#22c55e; --red:#f87171; --amber:#f5b840; --purple:#7c6cf0; --blue:#0ea5e9;
-  --radius:18px; --maxw:1120px;
+  --sky:#a9e2f7; --sky2:#e7f7fc; --grass:#c3e8a9; --grass2:#eaf7dc;
+  --ink:#1f3d4d; --muted:#5b7f8f;
+  --panel:#ffffff; --border:#ffe3ac;
+  --ball:#ee5253; --ball2:#ff6b6b; --dark:#2f3542;
+  --gold:#ffc312; --gold-d:#e89a00;
+  --lime:#17c964; --blue:#38bdf8; --violet:#8b5cf6; --pink:#ff6b9d; --amber:#f5b840;
+  --red:#ef5350; --green:#17c964;
+  --radius:22px; --maxw:1120px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
-body{background:linear-gradient(180deg,var(--sky) 0%,var(--bg) 45%,var(--grass) 100%);background-attachment:fixed;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;line-height:1.75;overflow-x:hidden}
-::selection{background:rgba(56,189,248,.25)}
-#progress{position:fixed;top:0;left:0;height:3px;width:0;z-index:1000;background:linear-gradient(90deg,var(--green),var(--accent),var(--blue));border-radius:0 3px 3px 0}
+body{background:linear-gradient(180deg,var(--sky) 0%,var(--sky2) 40%,var(--grass2) 100%);background-attachment:fixed;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;line-height:1.75;overflow-x:hidden}
+::selection{background:rgba(255,195,18,.35)}
+#progress{position:fixed;top:0;left:0;height:4px;width:0;z-index:1000;background:linear-gradient(90deg,var(--ball),var(--gold),var(--lime),var(--blue));border-radius:0 3px 3px 0}
 
-nav{position:fixed;top:0;left:0;right:0;z-index:900;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);background:rgba(255,255,255,.72);border-bottom:1px solid transparent;transition:.3s}
-nav.scrolled{border-bottom-color:var(--panel-border);background:rgba(255,255,255,.9)}
-.nav-inner{max-width:var(--maxw);margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
-.logo{font-weight:800;font-size:17px;display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--text)}
-.logo .dot{width:11px;height:11px;border-radius:50%;background:conic-gradient(var(--green),var(--accent),var(--purple),var(--green));animation:spin 5s linear infinite}
-@keyframes spin{to{transform:rotate(360deg)}}
-.nav-links{display:flex;gap:2px}
-.nav-links a{color:var(--muted);text-decoration:none;font-size:14px;padding:7px 12px;border-radius:99px;transition:.2s}
-.nav-links a:hover{color:var(--text);background:rgba(56,189,248,.1)}
-.nav-back{color:var(--muted);text-decoration:none;font-size:13px;border:1px solid var(--panel-border);padding:6px 14px;border-radius:99px;transition:.2s}
-.nav-back:hover{color:var(--text);border-color:var(--accent)}
-@media(max-width:820px){.nav-links{display:none}}
+/* ===== 顶部游戏 HUD 导航 ===== */
+nav{position:fixed;top:0;left:0;right:0;z-index:900;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);background:rgba(255,255,255,.78);border-bottom:2px solid transparent;transition:.3s}
+nav.scrolled{border-bottom-color:var(--border);background:rgba(255,255,255,.94);box-shadow:0 6px 24px -14px rgba(31,61,77,.3)}
+.nav-inner{max-width:var(--maxw);margin:0 auto;padding:11px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+.logo{font-weight:900;font-size:17px;display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--ink);white-space:nowrap}
+.pokeball{width:26px;height:26px;border-radius:50%;background:linear-gradient(180deg,var(--ball) 0 48%,var(--dark) 48% 54%,#fff 54% 100%);border:2px solid var(--dark);position:relative;flex-shrink:0;box-shadow:0 3px 0 rgba(47,53,66,.25)}
+.pokeball::after{content:"";position:absolute;left:50%;top:50%;width:9px;height:9px;border-radius:50%;background:#fff;border:2px solid var(--dark);transform:translate(-50%,-50%)}
+.nav-links{display:flex;gap:3px;flex-wrap:wrap;justify-content:center}
+.nav-links a{color:var(--muted);text-decoration:none;font-size:13px;font-weight:700;padding:6px 11px;border-radius:99px;transition:.2s}
+.nav-links a:hover{color:var(--ink);background:rgba(56,189,248,.14)}
+.nav-back{color:var(--ink);text-decoration:none;font-size:13px;font-weight:800;border:2px solid var(--dark);padding:6px 15px;border-radius:99px;transition:.15s;white-space:nowrap;background:#fff;box-shadow:0 3px 0 var(--dark)}
+.nav-back:hover{transform:translateY(-2px);box-shadow:0 5px 0 var(--dark)}
+.nav-back:active{transform:translateY(2px);box-shadow:0 1px 0 var(--dark)}
+@media(max-width:920px){.nav-links{display:none}}
 
-/* Hero */
-.hero{position:relative;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;overflow:hidden}
-.aurora{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:.55;animation:drift 16s ease-in-out infinite alternate}
-.blob.b1{width:480px;height:480px;background:#bfe3fa;top:-120px;left:-100px}
-.blob.b2{width:420px;height:420px;background:#c8ecdc;top:10%;right:-120px;animation-delay:-5s}
-.blob.b3{width:380px;height:380px;background:#d9f0c4;bottom:-140px;left:28%;animation-delay:-10s}
-@keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(50px,-30px) scale(1.12)}100%{transform:translate(-40px,30px) scale(.95)}}
-.grid-overlay{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(31,74,94,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(31,74,94,.04) 1px,transparent 1px);background-size:52px 52px;mask-image:radial-gradient(ellipse 75% 60% at 50% 42%,#000 30%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 75% 60% at 50% 42%,#000 30%,transparent 75%)}
-.hero-badge{position:relative;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--panel-border);background:var(--panel);padding:7px 18px;border-radius:99px;font-size:13px;color:var(--muted);margin-bottom:26px;animation:fadeUp .8s .1s both;box-shadow:0 2px 10px rgba(31,74,94,.06)}
-.hero-badge .pulse{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 0 0 rgba(34,197,94,.6);animation:pulse 2s infinite}
-@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(34,197,94,0)}100%{box-shadow:0 0 0 0 rgba(34,197,94,0)}}
-.hero h1{position:relative;font-size:clamp(30px,5.6vw,56px);font-weight:900;line-height:1.25;letter-spacing:1px;animation:fadeUp .8s .25s both}
-.hero h1 .grad{background:linear-gradient(100deg,#0ea5e9,#38bdf8 40%,#4ecb71 75%,#22c55e);-webkit-background-clip:text;background-clip:text;color:transparent}
-.hero .sub{position:relative;margin-top:18px;color:var(--muted);font-size:16px;max-width:640px;animation:fadeUp .8s .4s both}
-.hero .mini-train{position:relative;margin-top:34px;animation:fadeUp .8s .55s both}
-#heroNet{display:block}
-.hero .lossline{position:relative;margin-top:6px;font-size:14px;color:var(--muted);animation:fadeUp .8s .65s both}
-.hero .lossline b{color:var(--green);font-family:ui-monospace,monospace;font-size:17px}
-.scroll-hint{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:var(--muted);font-size:12px;display:flex;flex-direction:column;align-items:center;gap:6px;animation:fadeUp 1s 1s both}
-.scroll-hint .mouse{width:22px;height:34px;border:2px solid rgba(31,74,94,.3);border-radius:12px;position:relative}
+/* ===== 漂浮云 & 山丘 ===== */
+.sky-deco{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+.cloud{position:absolute;background:rgba(255,255,255,.85);border-radius:99px;filter:drop-shadow(0 6px 10px rgba(31,61,77,.08))}
+.cloud::before,.cloud::after{content:"";position:absolute;background:inherit;border-radius:50%}
+.cloud.c1{width:120px;height:34px;top:14%;left:8%;animation:cloudfloat 18s linear infinite}
+.cloud.c1::before{width:52px;height:52px;top:-26px;left:20px}.cloud.c1::after{width:38px;height:38px;top:-18px;left:64px}
+.cloud.c2{width:90px;height:26px;top:26%;right:10%;animation:cloudfloat 24s linear infinite reverse;opacity:.8}
+.cloud.c2::before{width:42px;height:42px;top:-20px;left:16px}.cloud.c2::after{width:30px;height:30px;top:-14px;left:50px}
+.cloud.c3{width:70px;height:20px;top:40%;left:20%;animation:cloudfloat 30s linear infinite;opacity:.6}
+.cloud.c3::before{width:32px;height:32px;top:-16px;left:12px}.cloud.c3::after{width:24px;height:24px;top:-11px;left:38px}
+@keyframes cloudfloat{from{transform:translateX(-40px)}to{transform:translateX(60px)}}
+
+/* ===== Hero ===== */
+.hero{position:relative;min-height:100svh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 90px;overflow:hidden}
+.hero-inner{position:relative;z-index:2;display:flex;flex-direction:column;align-items:center;max-width:900px}
+.hero-badge{position:relative;display:inline-flex;align-items:center;gap:9px;border:2px solid var(--dark);background:var(--gold);color:var(--dark);padding:8px 20px;border-radius:99px;font-size:13px;font-weight:900;letter-spacing:.5px;margin-bottom:22px;box-shadow:0 4px 0 var(--gold-d);animation:fadeUp .8s .1s both}
+.hero-badge .star{font-size:15px}
+.hero h1{position:relative;font-size:clamp(34px,6vw,62px);font-weight:900;line-height:1.2;letter-spacing:1px;animation:fadeUp .8s .22s both;color:#fff;-webkit-text-stroke:2px var(--dark);text-shadow:0 5px 0 rgba(47,53,66,.28),0 10px 22px rgba(31,61,77,.18)}
+.hero h1 .grad{color:var(--gold);-webkit-text-stroke:2px var(--dark)}
+.hero .sub{position:relative;margin-top:20px;color:var(--ink);font-size:16px;font-weight:600;max-width:660px;background:rgba(255,255,255,.72);padding:12px 22px;border-radius:16px;border:1.5px solid var(--border);animation:fadeUp .8s .4s both}
+.hero .sub b{color:var(--ball)}
+.hero-stage{position:relative;margin-top:30px;width:100%;max-width:560px;display:flex;align-items:center;justify-content:center;gap:22px;animation:fadeUp .8s .5s both}
+.mon-wrap{position:relative;flex-shrink:0}
+#heroMon{height:230px;width:auto;display:block;object-fit:contain;filter:drop-shadow(0 12px 12px rgba(31,61,77,.22));animation:bob 3.2s ease-in-out infinite}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-2deg)}50%{transform:translateY(-14px) rotate(2deg)}}
+.speech{position:relative;background:#fff;border:2px solid var(--dark);border-radius:18px;padding:14px 18px;font-size:14px;font-weight:700;color:var(--ink);max-width:280px;text-align:left;box-shadow:0 5px 0 rgba(47,53,66,.2)}
+.speech::before{content:"";position:absolute;left:-12px;top:38%;border:8px solid transparent;border-right-color:var(--dark);border-left:0}
+.speech .who{display:block;font-size:11px;color:var(--ball);font-weight:900;margin-bottom:3px;letter-spacing:1px}
+.mini-monitor{position:relative;margin-top:28px;background:rgba(255,255,255,.9);border:2px solid var(--dark);border-radius:18px;padding:14px 22px 12px;box-shadow:0 6px 0 rgba(47,53,66,.18);animation:fadeUp .8s .6s both}
+.mini-monitor .mtitle{font-size:11px;font-weight:900;letter-spacing:2px;color:var(--muted);margin-bottom:4px}
+#heroNet{display:block;margin:0 auto}
+.xpbar{height:11px;background:rgba(31,61,77,.12);border-radius:99px;overflow:hidden;margin:6px auto 2px;max-width:360px;border:1px solid rgba(47,53,66,.15)}
+.xpbar i{display:block;height:100%;width:6%;border-radius:99px;background:linear-gradient(90deg,var(--lime),var(--gold));transition:width .3s}
+.lossline{font-size:13px;color:var(--muted);font-weight:700;margin-top:4px}
+.lossline b{color:var(--green);font-family:ui-monospace,monospace;font-size:15px}
+.hero-cta{position:relative;margin-top:26px;display:flex;gap:14px;flex-wrap:wrap;justify-content:center;animation:fadeUp .8s .7s both}
+.gamebtn{display:inline-flex;align-items:center;gap:9px;padding:13px 28px;border-radius:14px;font-size:15px;font-weight:900;cursor:pointer;text-decoration:none;border:2px solid var(--dark);background:var(--ball);color:#fff;box-shadow:0 5px 0 #b71c1c;transition:.12s;font-family:inherit}
+.gamebtn:hover{transform:translateY(-2px);box-shadow:0 7px 0 #b71c1c}
+.gamebtn:active{transform:translateY(4px);box-shadow:0 1px 0 #b71c1c}
+.gamebtn.alt{background:var(--blue);box-shadow:0 5px 0 #0284c7}
+.gamebtn.alt:hover{box-shadow:0 7px 0 #0284c7}
+.gamebtn.alt:active{box-shadow:0 1px 0 #0284c7}
+.scroll-hint{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);color:var(--muted);font-size:12px;font-weight:700;display:flex;flex-direction:column;align-items:center;gap:6px;animation:fadeUp 1s 1s both;z-index:2}
+.scroll-hint .mouse{width:22px;height:34px;border:2px solid rgba(31,61,77,.35);border-radius:12px;position:relative}
 .scroll-hint .mouse::after{content:"";position:absolute;left:50%;top:6px;width:3px;height:7px;border-radius:3px;background:var(--muted);transform:translateX(-50%);animation:wheel 1.6s infinite}
 @keyframes wheel{0%{opacity:1;top:6px}100%{opacity:0;top:16px}}
 @keyframes fadeUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:translateY(0)}}
 
-section.block{max-width:var(--maxw);margin:0 auto;padding:96px 24px 20px}
-.sec-tag{display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:2px;color:var(--accent2);border:1px solid rgba(56,189,248,.4);background:rgba(56,189,248,.1);padding:5px 14px;border-radius:99px;margin-bottom:14px}
-.sec-title{font-size:clamp(24px,4vw,34px);font-weight:800;margin-bottom:10px}
-.sec-desc{color:var(--muted);font-size:15px;margin-bottom:40px;max-width:760px}
+/* ===== 冒险地图（关卡进度） ===== */
+.map-section{max-width:var(--maxw);margin:0 auto;padding:30px 24px 10px}
+.map-card{background:#fff;border:2px solid var(--dark);border-radius:var(--radius);padding:24px 26px;box-shadow:0 7px 0 rgba(47,53,66,.16)}
+.map-card h3{font-size:15px;font-weight:900;color:var(--ink);margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.map-card .msub{font-size:12.5px;color:var(--muted);margin-bottom:18px}
+.map-track{display:flex;align-items:flex-start;justify-content:space-between;position:relative;gap:4px}
+.map-track::before{content:"";position:absolute;left:6%;right:6%;top:26px;height:4px;background:repeating-linear-gradient(90deg,var(--border) 0 12px,transparent 12px 20px);z-index:0}
+.map-node{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:7px;flex:1;text-decoration:none;color:var(--ink)}
+.map-node .ic{width:52px;height:52px;border-radius:50%;background:#fff;border:3px solid var(--dark);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 4px 0 rgba(47,53,66,.18);transition:.2s}
+.map-node:hover .ic{transform:translateY(-4px) scale(1.06);box-shadow:0 8px 0 rgba(47,53,66,.18)}
+.map-node .lb{font-size:11px;font-weight:800;color:var(--muted);text-align:center;line-height:1.35}
+.map-node:nth-child(1) .ic{background:#ffe0e0}.map-node:nth-child(2) .ic{background:#e9e0ff}.map-node:nth-child(3) .ic{background:#dff3ff}.map-node:nth-child(4) .ic{background:#fff3cf}.map-node:nth-child(5) .ic{background:#d9f7e6}.map-node:nth-child(6) .ic{background:#ffe6f0}
+@media(max-width:700px){.map-node .lb{font-size:9px}.map-node .ic{width:42px;height:42px;font-size:18px}}
+
+/* ===== 关卡通用 ===== */
+section.block{max-width:var(--maxw);margin:0 auto;padding:78px 24px 12px}
+.stage-head{margin-bottom:34px}
+.stage-badge{display:inline-flex;align-items:center;gap:9px;background:var(--dark);color:var(--gold);font-size:12px;font-weight:900;letter-spacing:1.5px;padding:6px 16px;border-radius:99px;margin-bottom:14px}
+.stage-badge .gem{color:var(--blue)}
+.sec-title{font-size:clamp(24px,4vw,34px);font-weight:900;margin-bottom:10px;color:var(--ink);text-shadow:0 2px 0 rgba(255,255,255,.8)}
+.sec-desc{color:var(--muted);font-size:15px;margin-bottom:34px;max-width:780px;font-weight:500}
+.sec-desc b{color:var(--ball)}
 .reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease}
 .reveal.in{opacity:1;transform:none}
+.panel{border:2px solid var(--border);border-radius:var(--radius);background:var(--panel);box-shadow:0 7px 0 rgba(47,53,66,.1)}
+.panel-dark{border:2px solid var(--border);border-radius:var(--radius);background:linear-gradient(160deg,#f7fdff,#f3fbf4)}
 
-/* 通用卡片 */
-.panel{border:1px solid var(--panel-border);border-radius:var(--radius);background:var(--panel)}
-.panel-dark{border:1px solid var(--panel-border);border-radius:var(--radius);background:var(--bg2)}
+/* 奶蛙小贴纸 */
+.mon-sticker{position:absolute;height:74px;width:auto;pointer-events:none;z-index:3;filter:drop-shadow(0 4px 5px rgba(31,61,77,.2))}
+.stage-wrap{position:relative}
 
-/* ===== STEP 0: 拖线交互 ===== */
+/* ===== STEP 0 拖线挑战 ===== */
 .try-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:24px;align-items:stretch}
 @media(max-width:880px){.try-grid{grid-template-columns:1fr}}
 .try-canvas-wrap{position:relative}
 #tryCanvas{width:100%;display:block;border-radius:var(--radius);cursor:crosshair;touch-action:none}
-.try-side{display:flex;flex-direction:column;gap:18px;justify-content:center}
-.try-hint{border:1px dashed rgba(56,189,248,.5);border-radius:14px;padding:16px 18px;background:rgba(56,189,248,.06);font-size:14px;color:var(--muted)}
-.try-hint b{color:var(--text)}
-.verdict{font-size:15px;font-weight:700;padding:14px 18px;border-radius:14px;transition:.3s;text-align:center}
-.verdict.fail{background:rgba(248,113,113,.12);color:#c0392b;border:1px solid rgba(248,113,113,.3)}
-.verdict.win{background:rgba(52,211,153,.12);color:#1f9d6a;border:1px solid rgba(52,211,153,.35)}
+.try-side{display:flex;flex-direction:column;gap:16px;justify-content:center}
+.try-hint{border:2px dashed var(--gold);border-radius:16px;padding:16px 18px;background:#fffbe9;font-size:14px;color:var(--muted);font-weight:600}
+.try-hint b{color:var(--ink)}
+.verdict{font-size:15px;font-weight:900;padding:14px 18px;border-radius:14px;transition:.3s;text-align:center;border:2px solid var(--dark);box-shadow:0 4px 0 rgba(47,53,66,.18)}
+.verdict.fail{background:#ffe3e3;color:#c0392b}
+.verdict.win{background:#d9f7e6;color:#128a49}
 
-/* ===== STEP 1: 网络结构 ===== */
+/* ===== STEP 1 网络结构 ===== */
 .net-wrap{position:relative;padding:16px}
 #net{width:100%;display:block}
 .net-legend{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;margin-top:14px}
-.net-legend span{font-size:12.5px;color:var(--muted);display:flex;align-items:center;gap:7px}
-.net-legend i{width:12px;height:12px;border-radius:4px;display:inline-block}
-.net-weight-tip{text-align:center;color:var(--muted);font-size:13px;margin-top:14px;min-height:22px}
+.net-legend span{font-size:12.5px;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:7px}
+.net-legend i{width:12px;height:12px;border-radius:4px;display:inline-block;border:1px solid rgba(47,53,66,.25)}
+.net-weight-tip{text-align:center;color:var(--muted);font-size:13px;margin-top:14px;min-height:22px;font-weight:600}
 .net-weight-tip b{color:var(--amber);font-family:ui-monospace,monospace}
 
-/* ===== STEP 2: 训练播放器 ===== */
-.train-wrap{padding:26px}
-.train-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:18px}
-.train-top h4{font-size:18px;font-weight:800}
-.epoch-badge{font-family:ui-monospace,monospace;font-size:15px;font-weight:700;color:var(--accent2);border:1px solid rgba(56,189,248,.4);background:rgba(56,189,248,.1);padding:6px 16px;border-radius:99px}
-.train-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:22px}
-@media(max-width:880px){.train-grid{grid-template-columns:1fr}}
-#lossCanvas{width:100%;height:320px;display:block}
-.prob-panel{padding:18px;border-radius:14px;background:var(--bg2);border:1px solid var(--panel-border)}
-.prob-panel h5{font-size:13px;color:var(--muted);margin-bottom:14px;letter-spacing:1px;text-align:center}
-.prob-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
-.prob-row .lab{font-family:ui-monospace,monospace;font-size:13px;color:var(--muted);width:52px}
-.prob-row .track{flex:1;height:12px;background:rgba(31,74,94,.08);border-radius:99px;overflow:hidden;position:relative}
-.prob-row .bar{height:100%;border-radius:99px;transition:width .18s ease;width:0}
-.prob-row .val{font-family:ui-monospace,monospace;font-size:13px;width:52px;text-align:right}
-.prob-row.one .bar{background:linear-gradient(90deg,#10b981,#34d399)}
-.prob-row.zero .bar{background:linear-gradient(90deg,#f87171,#fca5a5)}
-.prob-row.one .val{color:#1f9d6a}
-.prob-row.zero .val{color:#c0392b}
-.train-controls{display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap}
-.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 24px;border-radius:99px;font-size:14px;font-weight:700;cursor:pointer;border:1px solid var(--panel-border);background:rgba(56,189,248,.06);color:var(--text);transition:.2s;font-family:inherit}
-.btn:hover{border-color:var(--accent);transform:translateY(-1px)}
-.btn.primary{background:linear-gradient(120deg,var(--accent),var(--accent2));border:none;box-shadow:0 8px 24px -10px var(--accent)}
-.btn.small{padding:8px 16px;font-size:13px}
-.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
-.train-slider{width:100%;margin-top:16px;-webkit-appearance:none;appearance:none;height:6px;border-radius:99px;background:rgba(31,74,94,.15);outline:none}
-.train-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 12px var(--accent)}
-.train-slider::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--accent);cursor:pointer;border:none}
-
-/* ===== STEP 3: 前向传播 ===== */
-.fp-wrap{padding:28px}
-.fp-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:18px}
-.fp-head h4{font-size:18px;font-weight:800}
-.fp-head .step-tag{font-size:13px;color:var(--accent2);font-weight:700;border:1px solid rgba(56,189,248,.4);background:rgba(56,189,248,.1);padding:5px 14px;border-radius:99px}
-#fpNet{width:100%;max-width:540px;margin:0 auto;display:block}
-.fp-caption{text-align:center;color:var(--muted);font-size:14px;margin-top:14px;min-height:46px;max-width:640px;margin-left:auto;margin-right:auto}
-.fp-caption b{color:var(--text)}
-.fp-caption .math{color:var(--amber);font-family:ui-monospace,monospace}
-.fp-controls{display:flex;gap:12px;justify-content:center;margin-top:18px;flex-wrap:wrap}
-.step-dots{display:flex;gap:8px;justify-content:center;margin-top:18px}
-.step-dots span{width:8px;height:8px;border-radius:50%;background:rgba(31,74,94,.15);transition:.3s}
-.step-dots span.on{background:var(--accent);box-shadow:0 0 8px var(--accent);width:24px;border-radius:99px}
-
-/* ===== STEP 4: 结果 ===== */
-table{width:100%;border-collapse:collapse}
-th,td{padding:14px 16px;text-align:center;font-size:14.5px;border-bottom:1px solid var(--panel-border)}
-th{font-size:12.5px;letter-spacing:1px;color:var(--muted);background:rgba(56,189,248,.06)}
-tbody tr:last-child td{border-bottom:none}
-tbody tr{transition:background .2s}
-tbody tr:hover{background:rgba(56,189,248,.05)}
-.res-0{color:var(--red);font-weight:700}
-.res-1{color:var(--green);font-weight:700}
-.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:24px}
-@media(max-width:860px){.result-grid{grid-template-columns:1fr}}
-.result-card{padding:24px}
-.result-card h4{font-size:16px;font-weight:800;margin-bottom:14px;display:flex;align-items:center;gap:9px}
-.result-card h4 .mini{width:10px;height:10px;border-radius:50%}
-.final-loss{font-size:34px;font-weight:900;background:linear-gradient(120deg,#0ea5e9,#22c55e);-webkit-background-clip:text;background-clip:text;color:transparent}
-.acc-badge{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;font-weight:700;color:var(--green);border:1px solid rgba(52,211,153,.4);background:rgba(52,211,153,.1);padding:6px 16px;border-radius:99px}
-.insight{margin-top:24px;padding:20px 22px;border-radius:14px;background:linear-gradient(135deg,rgba(56,189,248,.12),rgba(78,203,113,.1));border:1px solid rgba(56,189,248,.3)}
-.insight h5{font-size:14px;font-weight:800;color:#c4b5fd;margin-bottom:8px}
-.insight p{color:var(--muted);font-size:14px}
-
-/* ===== STEP 5: 代码 ===== */
-.code-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
-.code-tab{border:1px solid var(--panel-border);background:rgba(56,189,248,.06);color:var(--muted);padding:8px 18px;border-radius:99px;font-size:13.5px;font-weight:600;cursor:pointer;transition:.25s}
-.code-tab:hover{color:var(--text)}
-.code-tab.active{color:#fff;border-color:var(--accent);background:var(--accent);box-shadow:0 6px 18px -6px var(--accent)}
-.code-box{position:relative;border:1px solid var(--panel-border);border-radius:var(--radius);background:#0b101d;overflow:hidden}
-.code-box .code-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--panel-border);background:rgba(31,74,94,.03)}
-.code-box .code-head .dots{display:flex;gap:6px}
-.code-box .code-head .dots i{width:11px;height:11px;border-radius:50%}
-.code-box .code-head .fname{font-size:12.5px;color:var(--muted);font-family:ui-monospace,monospace}
-.code-box pre{margin:0;padding:20px;overflow:auto;font-size:13px;line-height:1.7;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#c9d4e8}
-.tok-c{color:#6b7a8a}.tok-s{color:#16a34a}.tok-k{color:#7c3aed}.tok-f{color:#0284c7}.tok-n{color:#b45309}.tok-m{color:#db2777}
-.code-pane{display:none}
-.code-pane.active{display:block}
-
-.final{max-width:var(--maxw);margin:90px auto 0;padding:0 24px}
-.final-box{position:relative;text-align:center;border-radius:24px;overflow:hidden;border:1px solid var(--panel-border);padding:64px 30px;background:linear-gradient(160deg,rgba(78,203,113,.12),rgba(56,189,248,.08) 50%,rgba(14,165,233,.08))}
-.final-box h3{font-size:clamp(22px,3.6vw,30px);font-weight:900;margin-bottom:12px}
-.final-box p{color:var(--muted);max-width:560px;margin:0 auto 26px;font-size:15px}
-.final-box .btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
-.btn.ghost{color:var(--text);border:1px solid var(--panel-border);background:rgba(56,189,248,.06);text-decoration:none;display:inline-flex;align-items:center;gap:7px;padding:12px 26px;border-radius:99px;font-size:14.5px;font-weight:700;transition:.2s}
-.btn.ghost:hover{border-color:var(--accent);transform:translateY(-2px)}
-
-footer{margin-top:90px;border-top:1px solid var(--panel-border);padding:34px 24px;text-align:center;color:var(--muted);font-size:13px}
-footer .heart{color:#f87171}
-#toTop{position:fixed;right:26px;bottom:26px;z-index:800;width:46px;height:46px;border-radius:50%;border:1px solid var(--panel-border);background:rgba(20,26,40,.85);color:var(--text);font-size:18px;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(14px);transition:.3s;backdrop-filter:blur(8px)}
-#toTop.show{opacity:1;pointer-events:auto;transform:none}
-#toTop:hover{border-color:var(--accent)}
-
-/* ===== 新增：Sigmoid 激活函数 ===== */
+/* ===== STEP 1.5 Sigmoid ===== */
 .sig-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:22px;align-items:stretch}
 @media(max-width:880px){.sig-grid{grid-template-columns:1fr}}
 #sigCanvas{width:100%;display:block;border-radius:var(--radius)}
 .sig-side{display:flex;flex-direction:column;gap:14px;justify-content:center}
-.sig-card{border:1px solid var(--panel-border);border-radius:14px;padding:16px 18px;background:var(--bg2)}
-.sig-card h5{font-size:13px;color:#c4b5fd;margin-bottom:6px;font-weight:700}
+.sig-card{border:2px solid var(--border);border-radius:16px;padding:16px 18px;background:#fff}
+.sig-card h5{font-size:13px;color:var(--violet);margin-bottom:6px;font-weight:900}
 .sig-card p{font-size:13.5px;color:var(--muted)}
-.sig-card .formula{font-family:ui-monospace,monospace;font-size:13px;color:#c9d4e8;margin-top:6px}
+.sig-card .formula{font-family:ui-monospace,monospace;font-size:14px;color:var(--ink);margin-top:6px;font-weight:700}
 
-/* ===== 新增：概率演变曲线 ===== */
+/* ===== STEP 2 训练播放器 ===== */
+.train-wrap{padding:26px}
+.train-top{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:18px}
+.train-top h4{font-size:18px;font-weight:900}
+.epoch-badge{font-family:ui-monospace,monospace;font-size:15px;font-weight:800;color:var(--dark);border:2px solid var(--dark);background:var(--gold);padding:6px 16px;border-radius:99px;box-shadow:0 3px 0 var(--gold-d)}
+.train-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:22px}
+@media(max-width:880px){.train-grid{grid-template-columns:1fr}}
+#lossCanvas{width:100%;height:320px;display:block}
+.prob-panel{padding:18px;border-radius:16px;background:#fff;border:2px solid var(--border)}
+.prob-panel h5{font-size:13px;color:var(--muted);margin-bottom:14px;letter-spacing:1px;text-align:center;font-weight:800}
+.prob-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.prob-row .lab{font-size:12.5px;color:var(--muted);width:78px;font-weight:700}
+.prob-row .track{flex:1;height:14px;background:rgba(31,61,77,.1);border-radius:99px;overflow:hidden;position:relative;border:1px solid rgba(47,53,66,.12)}
+.prob-row .bar{height:100%;border-radius:99px;transition:width .18s ease;width:0}
+.prob-row .val{font-family:ui-monospace,monospace;font-size:13px;width:48px;text-align:right;font-weight:700}
+.prob-row.one .bar{background:linear-gradient(90deg,#17c964,#5ce6a0)}
+.prob-row.zero .bar{background:linear-gradient(90deg,#ef5350,#ff8a80)}
+.prob-row.one .val{color:#128a49}.prob-row.zero .val{color:#c0392b}
+.train-controls{display:flex;gap:12px;justify-content:center;margin-top:20px;flex-wrap:wrap}
+.btn{display:inline-flex;align-items:center;gap:7px;padding:11px 24px;border-radius:12px;font-size:14px;font-weight:900;cursor:pointer;border:2px solid var(--dark);background:#fff;color:var(--ink);transition:.12s;font-family:inherit;box-shadow:0 4px 0 var(--dark)}
+.btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 var(--dark)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--dark)}
+.btn.primary{background:var(--lime);color:#fff;border-color:var(--dark);box-shadow:0 4px 0 #0e8f47}
+.btn.primary:hover{box-shadow:0 6px 0 #0e8f47}.btn.primary:active{box-shadow:0 1px 0 #0e8f47}
+.btn.small{padding:8px 16px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none;box-shadow:0 4px 0 var(--dark)}
+.train-slider{width:100%;margin-top:16px;-webkit-appearance:none;appearance:none;height:8px;border-radius:99px;background:rgba(31,61,77,.15);outline:none;border:1px solid rgba(47,53,66,.15)}
+.train-slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;border-radius:50%;background:var(--gold);cursor:pointer;border:2px solid var(--dark);box-shadow:0 3px 0 var(--gold-d)}
+.train-slider::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--gold);cursor:pointer;border:2px solid var(--dark)}
 .probcurve-wrap{margin-top:22px;padding:20px}
-.probcurve-wrap h5{font-size:14px;color:var(--muted);margin-bottom:12px;letter-spacing:1px;text-align:center}
+.probcurve-wrap h5{font-size:14px;color:var(--muted);margin-bottom:12px;letter-spacing:1px;text-align:center;font-weight:800}
 #probCurveCanvas{width:100%;height:300px;display:block}
 .probcurve-legend{display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-top:10px}
-.probcurve-legend span{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.probcurve-legend span{font-size:12px;color:var(--muted);font-weight:700;display:flex;align-items:center;gap:6px}
 .probcurve-legend i{width:14px;height:3px;border-radius:2px;display:inline-block}
 
-/* ===== 新增：参数演变 ===== */
+/* ===== STEP 2.5 参数演变 ===== */
 .param-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
 @media(max-width:860px){.param-grid{grid-template-columns:1fr}}
 .param-card{padding:22px}
-.param-card h5{font-size:15px;font-weight:800;margin-bottom:6px}
+.param-card h5{font-size:15px;font-weight:900;margin-bottom:6px}
 .param-card .sub{font-size:12.5px;color:var(--muted);margin-bottom:14px}
 .param-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
 .param-row .name{font-family:ui-monospace,monospace;font-size:13px;color:var(--muted)}
 .param-row .vals{font-family:ui-monospace,monospace;font-size:13px}
 .param-row .arrow{color:var(--amber);margin:0 8px}
-.param-row .from{color:#c0392b}
-.param-row .to{color:#1f9d6a}
-.param-bar{height:8px;background:rgba(31,74,94,.08);border-radius:99px;overflow:hidden;margin-top:6px}
-.param-bar .fill{height:100%;background:linear-gradient(90deg,#f87171,#fbbf24,#34d399);border-radius:99px;width:0;transition:width .4s ease}
+.param-row .from{color:#c0392b}.param-row .to{color:#128a49}
 #paramCanvas{width:100%;height:260px;display:block;margin-top:6px}
 
-/* ===== 新增：为什么隐藏层 / 对比 ===== */
+/* ===== STEP 3 前向传播 ===== */
+.fp-wrap{padding:28px}
+.fp-head{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;margin-bottom:18px}
+.fp-head h4{font-size:18px;font-weight:900}
+.fp-head .step-tag{font-size:13px;color:var(--dark);font-weight:800;border:2px solid var(--dark);background:var(--gold);padding:5px 14px;border-radius:99px}
+#fpNet{width:100%;max-width:540px;margin:0 auto;display:block}
+.fp-caption{text-align:center;color:var(--muted);font-size:14px;margin-top:14px;min-height:46px;max-width:640px;margin-left:auto;margin-right:auto;font-weight:600}
+.fp-caption b{color:var(--ink)}
+.fp-caption .math{color:var(--amber);font-family:ui-monospace,monospace}
+.fp-controls{display:flex;gap:12px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.step-dots{display:flex;gap:8px;justify-content:center;margin-top:18px}
+.step-dots span{width:8px;height:8px;border-radius:50%;background:rgba(31,61,77,.18);transition:.3s}
+.step-dots span.on{background:var(--gold);box-shadow:0 0 8px var(--gold);width:24px;border-radius:99px}
+
+/* ===== STEP 4 结果 ===== */
+table{width:100%;border-collapse:collapse}
+th,td{padding:14px 16px;text-align:center;font-size:14.5px;border-bottom:1px solid var(--border)}
+th{font-size:12.5px;letter-spacing:1px;color:var(--ink);background:#fffbe9;font-weight:900}
+tbody tr:last-child td{border-bottom:none}
+tbody tr{transition:background .2s}
+tbody tr:hover{background:rgba(255,195,18,.08)}
+.res-0{color:var(--red);font-weight:800}.res-1{color:var(--green);font-weight:800}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-bottom:24px}
+@media(max-width:860px){.result-grid{grid-template-columns:1fr}}
+.result-card{padding:24px}
+.result-card h4{font-size:16px;font-weight:900;margin-bottom:14px;display:flex;align-items:center;gap:9px}
+.result-card h4 .mini{width:12px;height:12px;border-radius:50%;border:1px solid rgba(47,53,66,.3)}
+.final-loss{font-size:34px;font-weight:900;color:var(--violet)}
+.acc-badge{display:inline-flex;align-items:center;gap:8px;margin-top:10px;font-size:14px;font-weight:900;color:#128a49;border:2px solid var(--dark);background:#d9f7e6;padding:6px 16px;border-radius:99px;box-shadow:0 3px 0 var(--dark)}
+.insight{margin-top:24px;padding:20px 22px;border-radius:16px;background:#fffbe9;border:2px solid var(--gold)}
+.insight h5{font-size:14px;font-weight:900;color:#b8860b;margin-bottom:8px}
+.insight p{color:var(--muted);font-size:14px}
+/* 徽章收集 */
+.badges{display:flex;gap:16px;justify-content:center;flex-wrap:wrap;margin:6px 0 8px}
+.badge-medal{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:11px;font-weight:800;color:var(--muted)}
+.badge-medal .disc{width:60px;height:60px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe89a,var(--gold) 60%,var(--gold-d));border:3px solid var(--dark);display:flex;align-items:center;justify-content:center;font-size:22px;box-shadow:0 5px 0 rgba(47,53,66,.25);animation:bob 3s ease-in-out infinite}
+.badge-medal:nth-child(2) .disc{animation-delay:-.7s}.badge-medal:nth-child(3) .disc{animation-delay:-1.4s}.badge-medal:nth-child(4) .disc{animation-delay:-2.1s}
+
+/* ===== 对比 ===== */
 .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
 @media(max-width:860px){.compare-grid{grid-template-columns:1fr}}
-.cmp-card{border:1px solid var(--panel-border);border-radius:var(--radius);padding:24px;position:relative;overflow:hidden}
-.cmp-card.bad{border-color:rgba(248,113,113,.3)}
-.cmp-card.good{border-color:rgba(52,211,153,.35)}
-.cmp-card .badge{position:absolute;top:16px;right:16px;font-size:11px;font-weight:800;padding:3px 10px;border-radius:99px}
-.cmp-card.bad .badge{background:rgba(248,113,113,.15);color:#c0392b}
-.cmp-card.good .badge{background:rgba(52,211,153,.15);color:#1f9d6a}
-.cmp-card h4{font-size:17px;font-weight:800;margin-bottom:8px}
+.cmp-card{border:2px solid var(--border);border-radius:var(--radius);padding:24px;position:relative;overflow:hidden;background:#fff}
+.cmp-card.bad{border-color:#ffc9c9}.cmp-card.good{border-color:#b7ecd0}
+.cmp-card .badge{position:absolute;top:16px;right:16px;font-size:11px;font-weight:900;padding:3px 10px;border-radius:99px;border:1px solid rgba(47,53,66,.2)}
+.cmp-card.bad .badge{background:#ffe3e3;color:#c0392b}
+.cmp-card.good .badge{background:#d9f7e6;color:#128a49}
+.cmp-card h4{font-size:17px;font-weight:900;margin-bottom:8px}
 .cmp-card p{color:var(--muted);font-size:13.5px}
 .cmp-card ul{margin-top:10px;padding-left:0;list-style:none}
 .cmp-card li{font-size:13.5px;color:var(--muted);padding:5px 0 5px 22px;position:relative}
 .cmp-card li::before{position:absolute;left:0;top:10px;width:8px;height:8px;border-radius:50%;content:""}
-.cmp-card.bad li::before{background:var(--red)}
-.cmp-card.good li::before{background:var(--green)}
+.cmp-card.bad li::before{background:var(--red)}.cmp-card.good li::before{background:var(--green)}
 
-/* ===== 新增：FAQ ===== */
-.faq-item{border:1px solid var(--panel-border);border-radius:14px;margin-bottom:12px;overflow:hidden;background:var(--panel)}
-.faq-q{padding:16px 20px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:700;font-size:15px;transition:.2s}
-.faq-q:hover{background:rgba(56,189,248,.06)}
-.faq-q .icon{font-size:20px;color:var(--accent);transition:.3s;flex-shrink:0;margin-left:12px}
+/* ===== FAQ ===== */
+.faq-item{border:2px solid var(--border);border-radius:16px;margin-bottom:12px;overflow:hidden;background:#fff}
+.faq-q{padding:16px 20px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:800;font-size:15px;transition:.2s;color:var(--ink)}
+.faq-q:hover{background:#fffbe9}
+.faq-q .icon{font-size:20px;color:var(--ball);transition:.3s;flex-shrink:0;margin-left:12px;font-weight:900}
 .faq-item.open .faq-q .icon{transform:rotate(45deg)}
 .faq-a{max-height:0;overflow:hidden;transition:max-height .35s ease;color:var(--muted);font-size:14px}
 .faq-a-inner{padding:0 20px 18px}
 
-/* ===== 新增：一图流总结 ===== */
+/* ===== 一图流 ===== */
 .flowline{display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:10px}
 @media(max-width:860px){.flowline{grid-template-columns:repeat(2,1fr)}}
-.flow-step{position:relative;border:1px solid var(--panel-border);border-radius:14px;padding:16px 12px;text-align:center;background:var(--bg2);transition:.25s}
+.flow-step{position:relative;border:2px solid var(--border);border-radius:16px;padding:16px 12px;text-align:center;background:#fff;transition:.25s}
 .flow-step:hover{border-color:var(--c);transform:translateY(-3px)}
 .flow-step .n{font-size:12px;font-weight:900;color:var(--c)}
-.flow-step .t{font-size:13px;font-weight:700;margin:6px 0 4px}
+.flow-step .t{font-size:13px;font-weight:900;margin:6px 0 4px;color:var(--ink)}
 .flow-step .d{font-size:11.5px;color:var(--muted);line-height:1.5}
 .flow-arrow{position:absolute;top:50%;right:-9px;transform:translateY(-50%);color:var(--muted);font-size:16px;z-index:2}
 @media(max-width:860px){.flow-arrow{display:none}}
 
+/* ===== 代码 ===== */
+.code-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.code-tab{border:2px solid var(--dark);background:#fff;color:var(--muted);padding:8px 18px;border-radius:99px;font-size:13.5px;font-weight:900;cursor:pointer;transition:.15s;box-shadow:0 3px 0 var(--dark)}
+.code-tab:hover{color:var(--ink);transform:translateY(-2px)}
+.code-tab.active{color:#fff;border-color:var(--dark);background:var(--violet);box-shadow:0 3px 0 #5b21b6}
+.code-box{position:relative;border:2px solid var(--dark);border-radius:var(--radius);background:#0f1729;overflow:hidden;box-shadow:0 7px 0 rgba(47,53,66,.25)}
+.code-box .code-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #2a3550;background:#151f38}
+.code-box .code-head .dots{display:flex;gap:6px}
+.code-box .code-head .dots i{width:11px;height:11px;border-radius:50%}
+.code-box .code-head .fname{font-size:12.5px;color:#9fb3c8;font-family:ui-monospace,monospace}
+.code-box pre{margin:0;padding:20px;overflow:auto;font-size:13px;line-height:1.7;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:#d6e2f0}
+.tok-c{color:#7d8ca0}.tok-s{color:#4ade80}.tok-k{color:#c084fc}.tok-f{color:#38bdf8}.tok-n{color:#fbbf24}.tok-m{color:#f472b6}
+.code-pane{display:none}.code-pane.active{display:block}
+
+/* ===== 结语 ===== */
+.final{max-width:var(--maxw);margin:80px auto 0;padding:0 24px}
+.final-box{position:relative;text-align:center;border-radius:26px;overflow:hidden;border:2px solid var(--dark);padding:52px 30px 44px;background:linear-gradient(160deg,#fff6d8,#e8f7ff 55%,#dcf7e4);box-shadow:0 9px 0 rgba(47,53,66,.18)}
+.final-box .finalmon{height:120px;width:auto;margin:0 auto 6px;display:block;filter:drop-shadow(0 8px 8px rgba(31,61,77,.22))}
+.final-box h3{font-size:clamp(22px,3.6vw,30px);font-weight:900;margin-bottom:12px;color:var(--ink);-webkit-text-stroke:.5px var(--dark)}
+.final-box p{color:var(--muted);max-width:560px;margin:0 auto 26px;font-size:15px}
+.final-box .btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap}
+footer{margin-top:20px;padding:30px 24px 40px;text-align:center;color:var(--muted);font-size:13px;font-weight:600}
+footer .heart{color:var(--ball)}
+#toTop{position:fixed;right:26px;bottom:26px;z-index:800;width:50px;height:50px;border-radius:50%;border:2px solid #fff;background:var(--ball);color:#fff;font-size:20px;font-weight:900;cursor:pointer;opacity:0;pointer-events:none;transform:translateY(14px);transition:.3s;box-shadow:0 5px 0 #b71c1c}
+#toTop.show{opacity:1;pointer-events:auto;transform:none}
+#toTop:hover{border-color:#fff}
 </style>
 </head>
 <body>
@@ -262,155 +303,175 @@ footer .heart{color:#f87171}
 
 <nav id="nav">
   <div class="nav-inner">
-    <a class="logo" href="#top"><span class="dot"></span>MLP · XOR</a>
+    <a class="logo" href="#top"><span class="pokeball"></span>奶蛙训练手册</a>
     <div class="nav-links">
-      <a href="#problem">XOR 难题</a>
-      <a href="#net">网络结构</a>
-      <a href="#sigmoid">激活函数</a>
-      <a href="#train">训练过程</a>
-      <a href="#params">参数演变</a>
-      <a href="#forward">前向传播</a>
-      <a href="#result">结果</a>
-      <a href="#code">代码</a>
+      <a href="#sec-problem">迷雾森林</a>
+      <a href="#sec-net">大脑构造</a>
+      <a href="#sec-sigmoid">觉醒开关</a>
+      <a href="#sec-train">特训场</a>
+      <a href="#sec-params">羁绊成长</a>
+      <a href="#sec-forward">必杀技</a>
+      <a href="#sec-result">挑战结果</a>
+      <a href="#sec-code">训练秘籍</a>
     </div>
     <a class="nav-back" href="index.html">← 作业目录</a>
   </div>
 </nav>
 
 <header class="hero" id="top">
-  <div class="aurora"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
-  <div class="grid-overlay"></div>
+  <div class="sky-deco"><div class="cloud c1"></div><div class="cloud c2"></div><div class="cloud c3"></div></div>
+  <div class="hero-inner">
+    <div class="hero-badge"><span class="star">★</span>作业 2 · 神经网络道馆 · 训练师挑战</div>
+    <h1>训练一只<br>会<span class="grad">异或</span>的奶蛙</h1>
+    <p class="sub">欢迎来到奶蛙训练道馆！这只小奶蛙还分不清"<b>相同</b>"和"<b>不同</b>"——带上它完成 300 轮特训，看它如何一点点觉醒，最终学会一道连直线都画不出的难题。</p>
 
-  <div class="hero-badge"><span class="pulse"></span>作业 2 · 深度学习实验</div>
+    <div class="hero-stage">
+      <div class="mon-wrap">
+        <img id="heroMon" src="naifwa0.png" alt="奶蛙">
+      </div>
+      <div class="speech"><span class="who">奶蛙 · Naiwa</span><span id="monSay">训练师！我…我分不清这两个信号一不一样，你能教我吗？</span></div>
+    </div>
 
-  <h1>让神经网络<br>学会<span class="grad">异或</span></h1>
+    <div class="mini-monitor">
+      <div class="mtitle">◉ 实时特训监视器 · LIVE</div>
+      <svg id="heroNet" viewBox="0 0 420 200" width="420" height="200"></svg>
+      <div class="xpbar"><i id="heroXp"></i></div>
+      <div class="lossline">熟练度提升中 · 误差 <b id="heroLoss">0.5620</b> · 特训 <b id="heroEpoch" style="color:var(--ball)">1</b>/300</div>
+    </div>
 
-  <p class="sub">异或是经典的"入学考试"——一条直线永远分不开的四个点，却能逼出一个隐藏层。下面这个小网络正在你眼前训练：每过一秒，它就更懂一点"不同为真"。</p>
-
-  <div class="mini-train">
-    <svg id="heroNet" viewBox="0 0 420 200" width="420" height="200"></svg>
-    <div class="lossline">损失 <b id="heroLoss">0.5620</b> · 轮次 <b id="heroEpoch" style="color:var(--accent)">1</b>/300</div>
+    <div class="hero-cta">
+      <a href="#sec-problem" class="gamebtn">⚔ 开始冒险</a>
+      <a href="#sec-code" class="gamebtn alt">📜 先看秘籍</a>
+    </div>
   </div>
-
   <div class="scroll-hint"><div class="mouse"></div>向下探索</div>
 </header>
 
-<!-- ============ STEP 0 难题 ============ -->
-<section class="block" id="problem">
-  <span class="sec-tag reveal">STEP 0 · 认识难题</span>
-  <h2 class="sec-title reveal">一条直线，画不出「异或」</h2>
-  <p class="sec-desc reveal">异或的规则是「相异为 1，相同为 0」。四个输入：00→0、11→0 是红色，01→1、10→1 是绿色。<b>试试拖动画布上的那条线</b>——你能找到一条直线，把红绿两类分开吗？</p>
+<!-- ===== 冒险地图 ===== -->
+<div class="map-section">
+  <div class="map-card reveal">
+    <h3>🗺️ 训练师冒险地图</h3>
+    <div class="msub">六个关卡，跟着奶蛙从"懵懂"走到"觉醒"。点击任意站点直达。</div>
+    <div class="map-track">
+      <a class="map-node" href="#sec-problem"><span class="ic">🌲</span><span class="lb">迷雾森林<br>画不出那条线</span></a>
+      <a class="map-node" href="#sec-net"><span class="ic">🧠</span><span class="lb">大脑构造<br>三层神经元</span></a>
+      <a class="map-node" href="#sec-sigmoid"><span class="ic">⚡</span><span class="lb">觉醒开关<br>sigmoid</span></a>
+      <a class="map-node" href="#sec-train"><span class="ic">🏋️</span><span class="lb">特训场<br>300 轮回放</span></a>
+      <a class="map-node" href="#sec-forward"><span class="ic">✨</span><span class="lb">必杀技<br>前向演算</span></a>
+      <a class="map-node" href="#sec-result"><span class="ic">🏆</span><span class="lb">冠军道馆<br>集齐徽章</span></a>
+    </div>
+  </div>
+</div>
 
+<!-- ============ STAGE 0 迷雾森林 ============ -->
+<section class="block stage-wrap" id="sec-problem">
+  <img class="mon-sticker" id="sticker1" src="naifwa0.png" alt="奶蛙" style="top:-10px;right:20px">
+  <div class="stage-head">
+    <span class="stage-badge reveal">STAGE 01 <span class="gem">◆</span> 迷雾森林</span>
+    <h2 class="sec-title reveal">第一道难关：一条线，分不开</h2>
+    <p class="sec-desc reveal">异或的规则是「相异为 1，相同为 0」：00→0、11→0 是<b>红色</b>奶蛙，01→1、10→1 是<b>绿色</b>奶蛙。<b>拖动森林里那条分界线</b>，试试能否把红绿两族完全分开——这就是困住奶蛙的难题。</p>
+  </div>
   <div class="try-grid reveal">
     <div class="panel-dark try-canvas-wrap" style="padding:14px">
       <canvas id="tryCanvas" width="480" height="480"></canvas>
     </div>
     <div class="try-side">
-      <div class="try-hint">👆 <b>按住线拖动、旋转</b>，想办法把 <span style="color:#e05a4e">红点</span> 和 <span style="color:#1f9d6a">绿点</span> 分到线的两侧。</div>
-      <div class="verdict fail" id="tryVerdict">✗ 还有点在错误的一侧</div>
+      <div class="try-hint">👆 <b>按住线拖动、旋转</b>，想办法把 <span style="color:#e05a4e;font-weight:800">红点</span> 和 <span style="color:#128a49;font-weight:800">绿点</span> 分到两侧。</div>
+      <div class="verdict fail" id="tryVerdict">✗ 还有奶蛙站错了阵营</div>
       <div class="panel" style="padding:18px;font-size:14px;color:var(--muted)">
-        你很快会发现：<b style="color:var(--text)">无论线怎么摆，总有两个点"站错队"</b>。这就是「线性不可分」——单层感知机永远学不会 XOR，必须引入<strong style="color:#a5b4fc">隐藏层</strong>把空间"折"一下。
+        你会发现：<b style="color:var(--ink)">线怎么摆，总有 2 只"站错队"</b>。这叫「线性不可分」——单层的奶蛙学不会异或，必须进化出 <strong style="color:var(--violet)">隐藏层</strong>，把空间"折"一下才行。
       </div>
     </div>
   </div>
 </section>
 
-<!-- ============ STEP 1 网络 ============ -->
-<section class="block" id="net">
-  <span class="sec-tag reveal">STEP 1 · 搭网络</span>
-  <h2 class="sec-title reveal">一个 2-2-1 的三层网络</h2>
-  <p class="sec-desc reveal">2 个输入（x₁、x₂）→ 2 个隐藏神经元（h₁、h₂，带 sigmoid 激活）→ 1 个输出（ŷ，概率）。<b>把鼠标移到任意神经元或连线上</b>，能看到它对应的真实权重。</p>
-
+<!-- ============ STAGE 1 网络 ============ -->
+<section class="block stage-wrap" id="sec-net">
+  <div class="stage-head">
+    <span class="stage-badge reveal">STAGE 02 <span class="gem">◆</span> 大脑构造</span>
+    <h2 class="sec-title reveal">奶蛙的大脑：一个 2-2-1 网络</h2>
+    <p class="sec-desc reveal">它脑子里有两层神经元：<b>2 个输入</b>（看懂两个信号）→ <b>2 个隐藏神经元</b>（各自认领一种"不同"的组合）→ <b>1 个输出</b>（给出判断概率）。<b>把鼠标移到任意神经元或连线上</b>，查看它学到的真实"脑回路强度"（权重）。</p>
+  </div>
   <div class="panel-dark net-wrap reveal">
     <svg id="net" viewBox="0 0 680 340"></svg>
     <div class="net-legend">
       <span><i style="background:var(--blue)"></i>输入层 x</span>
-      <span><i style="background:var(--purple)"></i>隐藏层 h（sigmoid）</span>
-      <span><i style="background:var(--green)"></i>输出层 ŷ（sigmoid）</span>
-      <span><i style="background:var(--amber)"></i>权重（悬停查看）</span>
+      <span><i style="background:var(--violet)"></i>隐藏层 h（觉醒）</span>
+      <span><i style="background:var(--green)"></i>输出层 ŷ</span>
+      <span><i style="background:var(--gold)"></i>脑回路强度（悬停查看）</span>
     </div>
     <div class="net-weight-tip" id="netTip">悬停神经元或连线，查看真实训练后的权重值</div>
   </div>
 </section>
 
-<!-- ============ STEP 1.5 Sigmoid 激活函数 ============ -->
-<section class="block" id="sigmoid">
-  <span class="sec-tag reveal">STEP 1.5 · 激活函数</span>
-  <h2 class="sec-title reveal">为什么每个神经元都要"过一道 sigmoid"？</h2>
-  <p class="sec-desc reveal">隐藏层和输出层各算出一个"原始分数 z"，再经过 <b>sigmoid 函数</b>把它压成 0~1 之间的概率。没有它，多层网络就退化成一条直线；有了它，网络才有了"弯曲"和"非线性"的能力。把鼠标移到曲线上，看任意点的输入输出。</p>
-
+<!-- ============ STAGE 1.5 Sigmoid ============ -->
+<section class="block" id="sec-sigmoid">
+  <div class="stage-head">
+    <span class="stage-badge reveal">STAGE 03 <span class="gem">◆</span> 觉醒开关</span>
+    <h2 class="sec-title reveal">每个神经元的"觉醒开关"：sigmoid</h2>
+    <p class="sec-desc reveal">神经元先算出一个原始分数 z，再经过 <b>sigmoid 函数</b>压成 0~1 的"觉醒程度"。没有它，多层大脑就塌成一条直线；有了它，奶蛙才有了"转弯"的能力。把鼠标移到曲线上看任意点的输入输出。</p>
+  </div>
   <div class="sig-grid reveal">
-    <div class="panel-dark" style="padding:14px">
-      <canvas id="sigCanvas" width="520" height="380"></canvas>
-    </div>
+    <div class="panel-dark" style="padding:14px"><canvas id="sigCanvas" width="520" height="380"></canvas></div>
     <div class="sig-side">
-      <div class="sig-card">
-        <h5>📐 函数公式</h5>
-        <div class="formula">σ(z) = 1 / (1 + e⁻ᶻ)</div>
-        <p>输入 z 是"加权和 + 偏置"，输出落在 (0, 1)。</p>
-      </div>
-      <div class="sig-card">
-        <h5>🎯 三个关键点</h5>
-        <p>z=0 → σ=0.5（最不确定）<br>z 越大 → σ 越接近 1（越确信是 1）<br>z 越小 → σ 越接近 0（越确信是 0）</p>
-      </div>
-      <div class="sig-card">
-        <h5>🔗 在 XOR 里的角色</h5>
-        <p>隐藏层的 sigmoid 让 h₁、h₂ 变成 0~1 的"开关"；输出层的 sigmoid 让最后结果变成可直接判断的概率（≥0.5 判为 1）。</p>
-      </div>
+      <div class="sig-card"><h5>📐 觉醒公式</h5><div class="formula">σ(z) = 1 / (1 + e⁻ᶻ)</div><p>输入 z 是"加权和 + 偏置"，输出落在 (0, 1)。</p></div>
+      <div class="sig-card"><h5>🎯 三个关键状态</h5><p>z=0 → σ=0.5（最纠结）<br>z 越大 → σ 越接近 1（越认定"不同"）<br>z 越小 → σ 越接近 0（越认定"相同"）</p></div>
+      <div class="sig-card"><h5>🔗 在异或里的角色</h5><p>隐藏层的 sigmoid 让 h₁、h₂ 变成 0~1 的"开关"；输出层把结果变成可直接判断的概率（≥0.5 判为 1）。</p></div>
     </div>
   </div>
 </section>
 
-<!-- ============ STEP 2 训练 ============ -->
-<section class="block" id="train">
-  <span class="sec-tag reveal">STEP 2 · 看它学习</span>
-  <h2 class="sec-title reveal">300 轮训练，四个概率"归位"</h2>
-  <p class="sec-desc reveal">这是<b>真实跑出来的训练数据</b>（每轮的损失、每 10 轮四个样本的预测概率）。点「▶ 播放」，看损失一路下滑，同时右侧四个样本的概率从"犹豫的 0.5 附近"分别冲向 0 和 1。</p>
-
+<!-- ============ STAGE 2 训练 ============ -->
+<section class="block" id="sec-train">
+  <div class="stage-head">
+    <span class="stage-badge reveal">STAGE 04 <span class="gem">◆</span> 特训场</span>
+    <h2 class="sec-title reveal">300 轮特训，四只奶蛙各自"归位"</h2>
+    <p class="sec-desc reveal">这是<b>真实跑出来的训练记录</b>。点「▶ 开始特训」，看误差一路下降，同时四只奶蛙的觉醒度从"纠结的 0.5 附近"分别冲向 0 和 1——奶蛙正在记住它们。</p>
+  </div>
   <div class="panel-dark train-wrap reveal">
     <div class="train-top">
-      <h4>训练过程回放</h4>
+      <h4>🏋️ 特训回放室</h4>
       <span class="epoch-badge" id="epochBadge">epoch 1 / 300</span>
     </div>
     <div class="train-grid">
       <canvas id="lossCanvas"></canvas>
       <div class="prob-panel">
-        <h5>四个样本的预测概率</h5>
-        <div class="prob-row one" data-i="1"><span class="lab">01 → 1</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
-        <div class="prob-row one" data-i="2"><span class="lab">10 → 1</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
-        <div class="prob-row zero" data-i="0"><span class="lab">00 → 0</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
-        <div class="prob-row zero" data-i="3"><span class="lab">11 → 0</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
-        <div style="margin-top:14px;font-size:12px;color:var(--muted);text-align:center">绿色应→1，红色应→0</div>
+        <h5>四只奶蛙的觉醒度（预测概率）</h5>
+        <div class="prob-row one" data-i="1"><span class="lab">焰尾 01→1</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
+        <div class="prob-row one" data-i="2"><span class="lab">雷耳 10→1</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
+        <div class="prob-row zero" data-i="0"><span class="lab">泡泡 00→0</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
+        <div class="prob-row zero" data-i="3"><span class="lab">岩甲 11→0</span><div class="track"><div class="bar"></div></div><span class="val">0.000</span></div>
+        <div style="margin-top:14px;font-size:12px;color:var(--muted);text-align:center;font-weight:700">绿族应→1，红族应→0</div>
       </div>
     </div>
     <div class="train-controls">
-      <button class="btn primary" id="playBtn">▶ 播放训练</button>
+      <button class="btn primary" id="playBtn">▶ 开始特训</button>
       <button class="btn" id="resetBtn">↺ 重置</button>
       <button class="btn small" id="speedBtn">速度 1×</button>
     </div>
     <input type="range" class="train-slider" id="trainSlider" min="0" max="299" value="0" step="1">
-
     <div class="probcurve-wrap panel-dark">
-      <h5>📈 四个样本预测概率的完整演变轨迹（真实数据，每轮一个点）</h5>
+      <h5>📈 四只奶蛙觉醒度的完整成长轨迹（真实数据，每轮一个点）</h5>
       <canvas id="probCurveCanvas"></canvas>
       <div class="probcurve-legend">
-        <span><i style="background:#34d399"></i>01→1 / 10→1（应逼近 1）</span>
-        <span><i style="background:#f87171"></i>00→0 / 11→0（应逼近 0）</span>
+        <span><i style="background:#17c964"></i>焰尾 / 雷耳（应逼近 1）</span>
+        <span><i style="background:#ef5350"></i>泡泡 / 岩甲（应逼近 0）</span>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ============ STEP 2.5 参数演变 ============ -->
-<section class="block" id="params">
-  <span class="sec-tag reveal">STEP 2.5 · 参数演变</span>
-  <h2 class="sec-title reveal">训练到底改了什么？权重一步步"长大"</h2>
-  <p class="sec-desc reveal">所谓"学习"，本质就是这 9 个数字（6 个权重 + 3 个偏置）在 300 轮里不断调整。对比训练前后的值，权重普遍增大了 2~3 倍——网络越练越"自信"。拖动进度条，看权重如何随时间演化。</p>
-
+<!-- ============ STAGE 2.5 参数 ============ -->
+<section class="block" id="sec-params">
+  <div class="stage-head">
+    <span class="stage-badge reveal">STAGE 05 <span class="gem">◆</span> 羁绊成长</span>
+    <h2 class="sec-title reveal">特训到底改变了什么？脑回路越练越强</h2>
+    <p class="sec-desc reveal">所谓"学会"，本质就是这 9 个数字（6 条脑回路 + 3 个阈值）在 300 轮里不断变强。对比训练前后的数值，权重普遍增大了 2~3 倍——奶蛙越来越"自信"。拖动进度条看它如何成长。</p>
+  </div>
   <div class="param-grid reveal">
     <div class="param-card panel-dark">
-      <h5>训练前后 · 权重对比</h5>
-      <div class="sub">初始值（手工设定）→ 训练后学到的值</div>
+      <h5>训练前后 · 脑回路强度</h5>
+      <div class="sub">初始值 → 特训后学到的值</div>
       <div class="param-row"><span class="name">W₁₁ (x₁→h₁)</span><span class="vals"><span class="from">2.00</span><span class="arrow">→</span><span class="to">6.14</span></span></div>
       <div class="param-row"><span class="name">W₁₂ (x₁→h₂)</span><span class="vals"><span class="from">-2.00</span><span class="arrow">→</span><span class="to">-6.01</span></span></div>
       <div class="param-row"><span class="name">W₂₁ (x₂→h₁)</span><span class="vals"><span class="from">-2.00</span><span class="arrow">→</span><span class="to">-6.01</span></span></div>
@@ -419,34 +480,32 @@ footer .heart{color:#f87171}
       <div class="param-row"><span class="name">v₂ (h₂→ŷ)</span><span class="vals"><span class="from">3.00</span><span class="arrow">→</span><span class="to">8.19</span></span></div>
     </div>
     <div class="param-card panel-dark">
-      <h5>偏置对比</h5>
-      <div class="sub">偏置相当于"阈值"，控制神经元点亮的难易</div>
+      <h5>觉醒门槛（偏置）</h5>
+      <div class="sub">相当于"阈值"，控制神经元多容易被点亮</div>
       <div class="param-row"><span class="name">b₁ (h₁)</span><span class="vals"><span class="from">-1.00</span><span class="arrow">→</span><span class="to">-3.47</span></span></div>
       <div class="param-row"><span class="name">b₂ (h₂)</span><span class="vals"><span class="from">-1.00</span><span class="arrow">→</span><span class="to">-3.47</span></span></div>
       <div class="param-row"><span class="name">b (输出)</span><span class="vals"><span class="from">-2.50</span><span class="arrow">→</span><span class="to">-4.01</span></span></div>
-      <div style="margin-top:16px;font-size:13px;color:var(--muted)">
-        偏置变得更负，意味着每个神经元"点亮"的门槛变高了——只有输入信号足够强才会激活，这让网络能更干净地区分"有信号"和"没信号"。
-      </div>
+      <div style="margin-top:16px;font-size:13px;color:var(--muted)">门槛变得更负，意味着神经元"点亮"的要求更高了——只有信号足够强才响应，这让奶蛙能更干净地区分两族奶蛙。</div>
     </div>
   </div>
-
   <div class="panel-dark param-card reveal" style="margin-top:20px">
-    <h5>权重随训练轮数的演化曲线</h5>
+    <h5>脑回路强度随特训轮数的演化</h5>
     <div class="sub">拖动进度条，观察 W₁₁（蓝）、W₁₂（红）、v₁（绿）三条曲线的变化</div>
     <canvas id="paramCanvas"></canvas>
     <input type="range" class="train-slider" id="paramSlider" min="0" max="299" value="299" step="1" style="margin-top:14px">
   </div>
 </section>
 
-<!-- ============ STEP 3 前向传播 ============ -->
-<section class="block" id="forward">
-  <span class="sec-tag reveal">STEP 3 · 前向传播</span>
-  <h2 class="sec-title reveal">训练完成后，数据怎么算</h2>
-  <p class="sec-desc reveal">用<b>训练后学到的真实权重</b>，手算一遍样本「01 → 应输出 1」的完整过程。数字与下方结果表完全吻合。</p>
-
+<!-- ============ STAGE 3 前向传播 ============ -->
+<section class="block" id="sec-forward">
+  <div class="stage-head">
+    <span class="stage-badge reveal">STAGE 06 <span class="gem">◆</span> 必杀技演算</span>
+    <h2 class="sec-title reveal">奶蛙是怎么"想"出答案的？</h2>
+    <p class="sec-desc reveal">用<b>特训后学到的真实权重</b>，手算一遍奶蛙「焰尾 01 → 应判为 1」的完整思考过程。每一步的数字都与下方结果表完全吻合。</p>
+  </div>
   <div class="panel-dark fp-wrap reveal">
     <div class="fp-head">
-      <h4>前向传播 · 样本 (x₁=0, x₂=1)</h4>
+      <h4>✨ 必杀技 · 样本 (x₁=0, x₂=1)</h4>
       <span class="step-tag" id="fpStepTag">步骤 1 / 5</span>
     </div>
     <svg id="fpNet" viewBox="0 0 540 300"></svg>
@@ -460,134 +519,127 @@ footer .heart{color:#f87171}
   </div>
 </section>
 
-<!-- ============ STEP 4 结果 ============ -->
-<section class="block" id="result">
-  <span class="sec-tag reveal">STEP 4 · 看结果</span>
-  <h2 class="sec-title reveal">训练完，四个样本全对</h2>
-  <p class="sec-desc reveal">两个框架（TensorFlow 2.21 / PyTorch 2.15，float64，seed=7）在本地真实跑出的结果，完全一致。</p>
-
+<!-- ============ STAGE 4 结果 ============ -->
+<section class="block" id="sec-result">
+  <div class="stage-head">
+    <span class="stage-badge reveal">STAGE 07 <span class="gem">◆</span> 冠军道馆</span>
+    <h2 class="sec-title reveal">挑战成功！四只奶蛙全部认对</h2>
+    <p class="sec-desc reveal">奶蛙进化完成！两个框架（TensorFlow / PyTorch，float64，seed=7）在本地真实跑出的结果完全一致。</p>
+  </div>
+  <div class="badges reveal">
+    <div class="badge-medal"><span class="disc">🔴</span>泡泡 00→0 ✓</div>
+    <div class="badge-medal"><span class="disc">🟢</span>焰尾 01→1 ✓</div>
+    <div class="badge-medal"><span class="disc">🟢</span>雷耳 10→1 ✓</div>
+    <div class="badge-medal"><span class="disc">🔴</span>岩甲 11→0 ✓</div>
+  </div>
   <div class="result-grid reveal">
     <div class="panel result-card">
-      <h4><span class="mini" style="background:var(--green);box-shadow:0 0 10px var(--green)"></span>TensorFlow 版</h4>
+      <h4><span class="mini" style="background:var(--blue)"></span>TensorFlow 版</h4>
       <div class="final-loss">0.0279</div>
-      <div style="color:var(--muted);font-size:13px;margin-top:2px">最终损失</div>
+      <div style="color:var(--muted);font-size:13px;margin-top:2px">最终误差</div>
       <div class="acc-badge">✓ 4 / 4 分类正确</div>
     </div>
     <div class="panel result-card">
-      <h4><span class="mini" style="background:var(--purple);box-shadow:0 0 10px var(--purple)"></span>PyTorch 版</h4>
+      <h4><span class="mini" style="background:var(--violet)"></span>PyTorch 版</h4>
       <div class="final-loss">0.0279</div>
-      <div style="color:var(--muted);font-size:13px;margin-top:2px">最终损失</div>
+      <div style="color:var(--muted);font-size:13px;margin-top:2px">最终误差</div>
       <div class="acc-badge">✓ 4 / 4 分类正确</div>
     </div>
   </div>
-
   <div class="panel reveal" style="overflow:hidden">
     <table>
-      <thead><tr><th>x₁</th><th>x₂</th><th>真实标签</th><th>隐藏层 (h₁, h₂)</th><th>预测概率</th><th>预测</th></tr></thead>
+      <thead><tr><th>x₁</th><th>x₂</th><th>真实答案</th><th>隐藏层 (h₁, h₂)</th><th>预测概率</th><th>判断</th></tr></thead>
       <tbody id="resultBody"></tbody>
     </table>
   </div>
-
   <div class="insight reveal">
     <h5>🔑 关键洞察：隐藏层是怎么"解"异或的</h5>
-    <p>看「隐藏层」这一列：输入 (0,1) 时只有 h₂ 被点亮（0.935），输入 (1,0) 时只有 h₁ 被点亮（0.935），而 (0,0) 和 (1,1) 两个都暗。两个隐藏神经元各自"认领"了一种「只有一个 1」的情形，再各自用 +8.19 的权重把信号送到输出，从而拼出了完整的异或。这正是隐藏层"折叠空间"的直观体现。</p>
+    <p>看「隐藏层」这一列：输入 (0,1) 时只有 h₂ 被点亮（0.935），输入 (1,0) 时只有 h₁ 被点亮（0.935），而 (0,0)、(1,1) 两个都暗。两个隐藏神经元各自"认领"了一种「只有一个 1」的情形，再各自用 +8.19 的权重把信号送到输出，拼出了完整的异或。这正是隐藏层"折叠空间"的直观体现。</p>
   </div>
 </section>
 
-<!-- ============ STEP 4.5 为什么隐藏层 ============ -->
-<section class="block" id="why">
-  <span class="sec-tag reveal">深入理解 · 为什么非得隐藏层</span>
-  <h2 class="sec-title reveal">单层 vs 多层：差在一个"折"字</h2>
-  <p class="sec-desc reveal">如果去掉隐藏层，就是"单层感知机"——它只能学线性边界，面对 XOR 永远无能为力。加一层隐藏层，网络就能把空间"折叠"，把原来切不开的对角线"掰"开。这是理解所有深度网络的第一课。</p>
-
+<!-- ============ 特别篇：为什么隐藏层 ============ -->
+<section class="block" id="sec-why">
+  <div class="stage-head">
+    <span class="stage-badge reveal">特别篇 <span class="gem">◆</span> 进化的秘密</span>
+    <h2 class="sec-title reveal">为什么非得"进化"出隐藏层？</h2>
+    <p class="sec-desc reveal">如果去掉隐藏层，就是"单层感知机"——它只能画直线，面对异或永远无能为力。多一层隐藏层，大脑就能把空间"折叠"，把切不开的对角线"掰"开。这是理解所有深度网络的第一课。</p>
+  </div>
   <div class="compare-grid reveal">
     <div class="cmp-card bad">
-      <span class="badge">单层感知机 ✗</span>
-      <h4>没有隐藏层</h4>
-      <p>输出 = σ(x·W + b)，本质是一条直线（线性分类器）。</p>
+      <span class="badge">单层 ✗</span>
+      <h4>没进化出隐藏层</h4>
+      <p>输出 = σ(x·W + b)，本质是一条直线。</p>
       <ul>
-        <li>只能画"一条线"来分类</li>
-        <li>面对 XOR 的对角分布，永远有 2 个点分错</li>
-        <li>1969 年 Minsky 用它证明了单层感知机的局限，AI 陷入第一次寒冬</li>
+        <li>只能画"一条线"分类</li>
+        <li>面对异或的对角分布，永远有 2 只分错</li>
+        <li>1969 年 Minsky 由此证明单层的局限，AI 陷入第一次寒冬</li>
       </ul>
     </div>
     <div class="cmp-card good">
-      <span class="badge">多层感知机 ✓</span>
+      <span class="badge">多层 ✓</span>
       <h4>有隐藏层（本项目）</h4>
-      <p>输入先被隐藏层"变换"到新空间，再做线性分类。</p>
+      <p>输入先被隐藏层"变换"到新空间，再分类。</p>
       <ul>
-        <li>两个隐藏神经元把输入"折"成新的坐标</li>
-        <li>在新坐标里，四个点变得线性可分</li>
-        <li>这就是"深度学习"能拟合任意函数的原因（万能逼近定理）</li>
+        <li>两个隐藏神经元把输入"折"成新坐标</li>
+        <li>在新坐标里，四只奶蛙变得线性可分</li>
+        <li>这就是深度网络能拟合任意函数的原因（万能逼近定理）</li>
       </ul>
     </div>
   </div>
-
   <div class="insight reveal">
     <h5>💡 一个形象的类比</h5>
-    <p>想象四个点印在一张纸上：两个红点在对角、两个绿点在另一条对角。单层感知机只能用直尺划线，怎么都分不开；而隐藏层相当于把纸"对折一下再展开"——折痕把红点、绿点分别聚到一起，这时再画线就轻松分开了。隐藏层做的，就是"找一条最合适的折痕"。</p>
+    <p>想象四只奶蛙印在一张纸上：红族在对角、绿族在另一条对角。单层只能用直尺划线，怎么都分不开；隐藏层相当于把纸"对折一下再展开"——折痕把红绿分别聚到一起，这时再画线就轻松了。隐藏层做的，就是"找一条最合适的折痕"。</p>
   </div>
 </section>
 
-<!-- ============ STEP 6 一图流总结 ============ -->
-<section class="block" id="summary">
-  <span class="sec-tag reveal">回顾 · 一图流</span>
-  <h2 class="sec-title reveal">从数据到"学会"，五步走完</h2>
-  <p class="sec-desc reveal">把整个训练流程压缩成一条线，随时可以回来对照。</p>
+<!-- ============ 一图流 ============ -->
+<section class="block" id="sec-summary">
+  <div class="stage-head">
+    <span class="stage-badge reveal">训练师手册 <span class="gem">◆</span> 全程回顾</span>
+    <h2 class="sec-title reveal">从懵懂到学会，六步走完</h2>
+    <p class="sec-desc reveal">把整场特训压缩成一条路线，随时回来对照。</p>
+  </div>
   <div class="flowline reveal">
-    <div class="flow-step" style="--c:var(--blue)"><span class="n">01</span><div class="t">准备数据</div><div class="d">4 个 XOR 样本 (x₁,x₂) + 标签</div><span class="flow-arrow">→</span></div>
-    <div class="flow-step" style="--c:var(--purple)"><span class="n">02</span><div class="t">搭网络</div><div class="d">2-2-1 结构，随机/预设初始权重</div><span class="flow-arrow">→</span></div>
-    <div class="flow-step" style="--c:var(--amber)"><span class="n">03</span><div class="t">前向传播</div><div class="d">输入流过网络，算出预测概率</div><span class="flow-arrow">→</span></div>
-    <div class="flow-step" style="--c:var(--red)"><span class="n">04</span><div class="t">反向传播</div><div class="d">算损失，回传梯度，更新权重</div><span class="flow-arrow">→</span></div>
-    <div class="flow-step" style="--c:var(--accent)"><span class="n">05</span><div class="t">循环 300 轮</div><div class="d">损失从 0.56 降到 0.028</div><span class="flow-arrow">→</span></div>
-    <div class="flow-step" style="--c:var(--green)"><span class="n">06</span><div class="t">学会 XOR</div><div class="d">4 个样本全部预测正确</div></div>
+    <div class="flow-step" style="--c:var(--blue)"><span class="n">01</span><div class="t">准备数据</div><div class="d">4 只奶蛙 (x₁,x₂) + 标签</div><span class="flow-arrow">→</span></div>
+    <div class="flow-step" style="--c:var(--violet)"><span class="n">02</span><div class="t">搭大脑</div><div class="d">2-2-1 结构，预设初始权重</div><span class="flow-arrow">→</span></div>
+    <div class="flow-step" style="--c:var(--amber)"><span class="n">03</span><div class="t">前向传播</div><div class="d">信号流过大脑，算出判断</div><span class="flow-arrow">→</span></div>
+    <div class="flow-step" style="--c:var(--red)"><span class="n">04</span><div class="t">反向传播</div><div class="d">算误差，回传，更新权重</div><span class="flow-arrow">→</span></div>
+    <div class="flow-step" style="--c:var(--ball)"><span class="n">05</span><div class="t">循环 300 轮</div><div class="d">误差从 0.56 降到 0.028</div><span class="flow-arrow">→</span></div>
+    <div class="flow-step" style="--c:var(--green)"><span class="n">06</span><div class="t">进化完成</div><div class="d">4 只奶蛙全部判断正确</div></div>
   </div>
 </section>
 
-<!-- ============ STEP 7 FAQ ============ -->
-<section class="block" id="faq">
-  <span class="sec-tag reveal">常见问题</span>
-  <h2 class="sec-title reveal">你可能想问</h2>
-  <p class="sec-desc reveal">几个关于这个实验的高频疑问，一次说清。</p>
-
+<!-- ============ FAQ ============ -->
+<section class="block" id="sec-faq">
+  <div class="stage-head">
+    <span class="stage-badge reveal">训练师问答 <span class="gem">◆</span> FAQ</span>
+    <h2 class="sec-title reveal">你可能想问</h2>
+    <p class="sec-desc reveal">几个关于这场特训的高频疑问，一次说清。</p>
+  </div>
   <div class="reveal">
-    <div class="faq-item">
-      <div class="faq-q">为什么隐藏层刚好用 2 个神经元？<span class="icon">+</span></div>
-      <div class="faq-a"><div class="faq-a-inner">因为 XOR 恰好需要"两个子模式"：一个神经元认领「x₁=1 且 x₂=0」，另一个认领「x₁=0 且 x₂=1」。用 1 个隐藏神经元表达不了这种"或"关系，用 3 个及以上也能学，但 2 个是最精简、最能说明问题的配置。训练结果也印证了：h₁ 只在 (1,0) 点亮，h₂ 只在 (0,1) 点亮。</div></div>
-    </div>
-    <div class="faq-item">
-      <div class="faq-q">为什么用 sigmoid 而不是 ReLU？<span class="icon">+</span></div>
-      <div class="faq-a"><div class="faq-a-inner">因为这个任务的输出是"概率"（0~1），sigmoid 天然把输出压到这个区间，配合交叉熵损失非常自然。ReLU 更常用于深层网络的中间层（缓解梯度消失、计算更快），但对于 XOR 这种小任务，sigmoid 清晰易懂、足够好用。两者在这里都能训练成功。</div></div>
-    </div>
-    <div class="faq-item">
-      <div class="faq-q">为什么最终损失不是 0？<span class="icon">+</span></div>
-      <div class="faq-a"><div class="faq-a-inner">交叉熵损失的数学性质决定了：只要预测概率没到"绝对的 0 或 1"，损失就不为 0。训练后概率停在 0.0287 和 0.9745（已经很接近目标 0 和 1），对应的损失就是 0.0279。继续训练损失还会微降，但已无实际意义——因为 ≥0.5 的判断阈值早就让 4 个样本全对了。</div></div>
-    </div>
-    <div class="faq-item">
-      <div class="faq-q">TensorFlow 和 PyTorch 结果为什么一模一样？<span class="icon">+</span></div>
-      <div class="faq-a"><div class="faq-a-inner">因为两个脚本用了完全相同的设置：同样的初始权重、同样的 Adam 优化器（lr=0.03）、同样的 300 轮、同样的 float64 精度、同样的随机种子（seed=7）。深度学习的训练是确定性的（在固定种子的前提下），所以结果逐位一致。这也说明：框架只是工具，背后的数学是相通的。</div></div>
-    </div>
-    <div class="faq-item">
-      <div class="faq-q">这个 2-2-1 网络算"深度学习"吗？<span class="icon">+</span></div>
-      <div class="faq-a"><div class="faq-a-inner">严格说它只有一层隐藏层，通常叫"浅层网络"，是理解深度学习的起点而非终点。但它的每一个核心机制——前向传播、激活函数、损失函数、反向传播、优化器——都是 CNN、Transformer 等大型深度网络共享的。搞懂这个 9 参数的迷你网络，就理解了深度学习的骨架。</div></div>
-    </div>
+    <div class="faq-item"><div class="faq-q">为什么隐藏层刚好用 2 个神经元？<span class="icon">+</span></div><div class="faq-a"><div class="faq-a-inner">因为异或恰好需要"两个子模式"：一个神经元认领「x₁=1 且 x₂=0」，另一个认领「x₁=0 且 x₂=1」。用 1 个表达不了这种"或"关系，用 3 个以上也能学，但 2 个最精简。训练结果也印证了：h₁ 只在 (1,0) 点亮，h₂ 只在 (0,1) 点亮。</div></div></div>
+    <div class="faq-item"><div class="faq-q">为什么用 sigmoid 而不是 ReLU？<span class="icon">+</span></div><div class="faq-a"><div class="faq-a-inner">因为输出是"概率"（0~1），sigmoid 天然把输出压到这个区间，配合交叉熵损失很自然。ReLU 更常用于深层网络的中间层，但对异或这种小任务，sigmoid 清晰易懂、足够好用，两者都能训练成功。</div></div></div>
+    <div class="faq-item"><div class="faq-q">为什么最终误差不是 0？<span class="icon">+</span></div><div class="faq-a"><div class="faq-a-inner">交叉熵的数学性质决定：只要概率没到"绝对的 0 或 1"，误差就不为 0。训练后概率停在 0.0287 和 0.9745（已经很接近目标），对应误差 0.0279。继续训练还会微降，但已无实际意义——≥0.5 的阈值早就让 4 只奶蛙全对了。</div></div></div>
+    <div class="faq-item"><div class="faq-q">TensorFlow 和 PyTorch 结果为什么一模一样？<span class="icon">+</span></div><div class="faq-a"><div class="faq-a-inner">因为两个脚本设置完全相同：同样的初始权重、同样的 Adam（lr=0.03）、同样的 300 轮、同样的 float64、同样的随机种子 seed=7。固定种子下训练是确定性的，所以结果逐位一致。这也说明：框架只是工具，背后的数学是相通的。</div></div></div>
+    <div class="faq-item"><div class="faq-q">这个 2-2-1 网络算"深度学习"吗？<span class="icon">+</span></div><div class="faq-a"><div class="faq-a-inner">严格说它只有一层隐藏层，通常叫"浅层网络"，是理解深度学习的起点。但它的每个核心机制——前向传播、激活函数、损失函数、反向传播、优化器——都是 CNN、Transformer 等大型网络共享的。搞懂这个 9 参数的迷你网络，就理解了深度学习的骨架。</div></div></div>
   </div>
 </section>
 
-<!-- ============ STEP 5 代码 ============ -->
-<section class="block" id="code">
-  <span class="sec-tag reveal">STEP 5 · 看代码</span>
-  <h2 class="sec-title reveal">两份框架的完整代码</h2>
-  <p class="sec-desc reveal">同样的 2-2-1 网络、同样的 Adam 优化器、同样的 300 轮，TensorFlow 和 PyTorch 殊途同归。</p>
-
+<!-- ============ 训练秘籍 代码 ============ -->
+<section class="block" id="sec-code">
+  <div class="stage-head">
+    <span class="stage-badge reveal">秘籍阁 <span class="gem">◆</span> 训练源码</span>
+    <h2 class="sec-title reveal">两份框架的完整秘籍</h2>
+    <p class="sec-desc reveal">同样的 2-2-1 大脑、同样的 Adam 优化器、同样的 300 轮，TensorFlow 和 PyTorch 殊途同归。</p>
+  </div>
   <div class="code-tabs reveal">
     <button class="code-tab active" data-pane="pane-tf">TensorFlow</button>
     <button class="code-tab" data-pane="pane-pt">PyTorch</button>
   </div>
-
   <div class="code-box reveal">
     <div class="code-head">
-      <div class="dots"><i style="background:#f87171"></i><i style="background:#fbbf24"></i><i style="background:#34d399"></i></div>
+      <div class="dots"><i style="background:#ff5f56"></i><i style="background:#ffbd2e"></i><i style="background:#27c93f"></i></div>
       <span class="fname" id="codeFname">xor_tensorflow.py</span>
     </div>
     <div class="code-pane active" id="pane-tf">
@@ -666,19 +718,19 @@ optimizer = torch.optim.Adam(parameters, lr=<span class="tok-n">0.03</span>)
   </div>
 </section>
 
-<!-- 结语 -->
 <div class="final">
   <div class="final-box reveal">
-    <h3>一个 XOR，看懂整个神经网络</h3>
-    <p>从"一条线切不开"的困境，到隐藏层把空间折叠，再到损失下降、四个概率归位——这几十行代码，就是神经网络最本质的工作方式。CNN、Transformer，都是它的延伸。</p>
+    <img class="finalmon" id="finalMon" src="naifwa0.png" alt="进化后的奶蛙">
+    <h3>一个异或，看懂整个神经网络</h3>
+    <p>从"一条线切不开"的困境，到隐藏层把空间折叠，再到误差下降、四只奶蛙各归其位——这几十行代码，就是神经网络最本质的工作方式。CNN、Transformer，都是它的延伸。</p>
     <div class="btns">
-      <a class="btn ghost" href="index.html">← 回到作业目录</a>
-      <a class="btn ghost" href="#top">↑ 回到顶部</a>
+      <a class="gamebtn" href="index.html">← 作业目录</a>
+      <a class="gamebtn alt" href="#top">↑ 再玩一次</a>
     </div>
   </div>
 </div>
 
-<footer>用 <span class="heart">♥</span> 制作 · 作业2 · MLP 训练 XOR 实验报告 · 2026</footer>
+<footer>用 <span class="heart">♥</span> 制作 · 作业2 · 奶蛙训练道馆 · MLP 训练 XOR 实验报告 · 2026</footer>
 
 <button id="toTop" title="返回顶部">↑</button>
 
@@ -1326,6 +1378,50 @@ codeTabs.forEach(t=>t.addEventListener('click',()=>{
       if(!isOpen){item.classList.add('open');a.style.maxHeight=a.scrollHeight+'px';}
     });
   });
+})();
+
+
+/* ============================================================
+   奶蛙养成冒险 · 视觉增强层（新增，独立于原训练脚本）
+   只负责：经验条联动、Hero 对话气泡
+   奶蛙形象使用用户原图 naifwa0.png（已抠白底），由 HTML 中 <img> 直接引用
+   ============================================================ */
+(function(){
+
+  // 经验条：跟随 Hero 的 epoch 文本（Hero 动画会不断更新它）
+  var xp = document.getElementById('heroXp');
+  var ep = document.getElementById('heroEpoch');
+  if(xp && ep){
+    var last = '';
+    function syncXp(){
+      var n = parseInt(ep.textContent, 10);
+      if(!isNaN(n) && String(n) !== last){
+        last = String(n);
+        xp.style.width = Math.max(6, Math.round(n/300*100)) + '%';
+      }
+      requestAnimationFrame(syncXp);
+    }
+    syncXp();
+  }
+
+  // Hero 对话气泡随训练阶段变化，讲一个小故事
+  var say = document.getElementById('monSay');
+  if(say && ep){
+    var lines = [
+      '训练师！我分不清这两个信号一不一样，你能教我吗？',
+      '嗯……两条信号线乱糟糟的，好像分不开？',
+      '我开始有点头绪了，好像要把空间"折一下"！',
+      '哇！我脑子里长出两条脑回路了！',
+      '我好像……记住它们了！真的吗？',
+      '进化啦！四种奶蛙我全都认得出来！谢谢你，训练师！'
+    ];
+    var shown = -1;
+    setInterval(function(){
+      var n = parseInt(ep.textContent, 10) || 1;
+      var stage = Math.min(lines.length-1, Math.floor((n-1)/300*lines.length));
+      if(stage !== shown){ shown = stage; say.textContent = lines[stage]; }
+    }, 400);
+  }
 })();
 
 </script>
