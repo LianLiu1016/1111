@@ -7,38 +7,41 @@
 <meta name="description" content="我的作业目录：作业1 AI Agent 横评，作业2 用 MLP 训练 XOR 的神经网络报告。">
 <style>
 :root{
-  --bg:#0a0e17;
-  --bg2:#0d1322;
-  --panel:rgba(255,255,255,.04);
-  --panel-border:rgba(255,255,255,.09);
-  --text:#e8ecf4;
-  --muted:#9aa4b8;
-  --accent:#6d8bff;
-  --accent2:#9a6dff;
-  --codex:#10b981;
-  --claude:#e8825a;
-  --trae:#8b5cf6;
-  --wb:#3b82f6;
+  --sky:#c9e4f7;
+  --grass:#d7eec4;
+  --bg:#eef6f9;
+  --bg2:#eaf6f0;
+  --panel:#ffffff;
+  --panel-border:#d5e8dd;
+  --text:#1f4a5e;
+  --muted:#5f8290;
+  --accent:#38bdf8;
+  --accent2:#0ea5e9;
+  --codex:#4ecb71;
+  --claude:#f0a15a;
+  --trae:#7c6cf0;
+  --wb:#2f9e6f;
   --radius:18px;
   --maxw:1120px;
 }
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{
-  background:var(--bg);
+  background:linear-gradient(180deg,var(--sky) 0%,var(--bg) 45%,var(--grass) 100%);
+  background-attachment:fixed;
   color:var(--text);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
   line-height:1.75;
   overflow-x:hidden;
   min-height:100vh;
 }
-::selection{background:rgba(109,139,255,.35)}
+::selection{background:rgba(56,189,248,.25)}
 
 /* ===== 导航 ===== */
 nav{
   position:fixed;top:0;left:0;right:0;z-index:900;
   backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
-  background:rgba(10,14,23,.6);border-bottom:1px solid transparent;
+  background:rgba(255,255,255,.72);border-bottom:1px solid transparent;
 }
 .nav-inner{max-width:var(--maxw);margin:0 auto;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
 .logo{font-weight:800;font-size:17px;letter-spacing:.5px;display:flex;align-items:center;gap:9px;text-decoration:none;color:var(--text)}
@@ -49,37 +52,37 @@ nav{
 /* ===== Hero ===== */
 .hero{position:relative;min-height:88vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:120px 24px 80px;overflow:hidden}
 .aurora{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.blob{position:absolute;border-radius:50%;filter:blur(90px);opacity:.5;animation:drift 16s ease-in-out infinite alternate}
-.blob.b1{width:480px;height:480px;background:#1d3a8a;top:-120px;left:-100px}
-.blob.b2{width:420px;height:420px;background:#5b21a8;top:10%;right:-120px;animation-delay:-5s}
-.blob.b3{width:380px;height:380px;background:#065f46;bottom:-140px;left:28%;animation-delay:-10s}
+.blob{position:absolute;border-radius:50%;filter:blur(80px);opacity:.55;animation:drift 16s ease-in-out infinite alternate}
+.blob.b1{width:480px;height:480px;background:#bfe3fa;top:-120px;left:-100px}
+.blob.b2{width:420px;height:420px;background:#c8ecdc;top:10%;right:-120px;animation-delay:-5s}
+.blob.b3{width:380px;height:380px;background:#d9f0c4;bottom:-140px;left:28%;animation-delay:-10s}
 @keyframes drift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(50px,-30px) scale(1.12)}100%{transform:translate(-40px,30px) scale(.95)}}
-.grid-overlay{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.035) 1px,transparent 1px);background-size:52px 52px;mask-image:radial-gradient(ellipse 75% 60% at 50% 42%,#000 30%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 75% 60% at 50% 42%,#000 30%,transparent 75%)}
-.hero-badge{position:relative;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--panel-border);background:var(--panel);padding:7px 18px;border-radius:99px;font-size:13px;color:var(--muted);margin-bottom:28px;animation:fadeUp .8s .1s both}
-.hero-badge .pulse{width:8px;height:8px;border-radius:50%;background:var(--codex);box-shadow:0 0 0 0 rgba(16,185,129,.6);animation:pulse 2s infinite}
-@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(16,185,129,0)}100%{box-shadow:0 0 0 0 rgba(16,185,129,0)}}
+.grid-overlay{position:absolute;inset:0;pointer-events:none;background-image:linear-gradient(rgba(31,74,94,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(31,74,94,.04) 1px,transparent 1px);background-size:52px 52px;mask-image:radial-gradient(ellipse 75% 60% at 50% 42%,#000 30%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 75% 60% at 50% 42%,#000 30%,transparent 75%)}
+.hero-badge{position:relative;display:inline-flex;align-items:center;gap:8px;border:1px solid var(--panel-border);background:var(--panel);padding:7px 18px;border-radius:99px;font-size:13px;color:var(--muted);margin-bottom:28px;animation:fadeUp .8s .1s both;box-shadow:0 2px 10px rgba(31,74,94,.06)}
+.hero-badge .pulse{width:8px;height:8px;border-radius:50%;background:var(--codex);box-shadow:0 0 0 0 rgba(78,203,113,.6);animation:pulse 2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(78,203,113,0)}100%{box-shadow:0 0 0 0 rgba(78,203,113,0)}}
 .hero h1{position:relative;font-size:clamp(34px,6vw,64px);font-weight:900;line-height:1.25;letter-spacing:1px;animation:fadeUp .8s .25s both}
-.hero h1 .grad{background:linear-gradient(100deg,#7dd3fc,#a78bfa 40%,#f0abfc 70%,#fca5a5);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero h1 .grad{background:linear-gradient(100deg,#0ea5e9,#38bdf8 40%,#4ecb71 75%,#22c55e);-webkit-background-clip:text;background-clip:text;color:transparent}
 .hero p.sub{position:relative;margin-top:18px;color:var(--muted);font-size:16px;max-width:620px;animation:fadeUp .8s .4s both}
 .hero .stats{position:relative;display:flex;gap:14px;margin-top:34px;flex-wrap:wrap;justify-content:center;animation:fadeUp .8s .55s both}
-.stat{border:1px solid var(--panel-border);background:var(--panel);border-radius:var(--radius);padding:13px 26px;min-width:120px}
-.stat b{display:block;font-size:26px;font-weight:800;background:linear-gradient(120deg,#93c5fd,#c4b5fd);-webkit-background-clip:text;background-clip:text;color:transparent}
+.stat{border:1px solid var(--panel-border);background:var(--panel);border-radius:var(--radius);padding:13px 26px;min-width:120px;box-shadow:0 2px 14px rgba(31,74,94,.07)}
+.stat b{display:block;font-size:26px;font-weight:800;background:linear-gradient(120deg,#0ea5e9,#4ecb71);-webkit-background-clip:text;background-clip:text;color:transparent}
 .stat span{font-size:12.5px;color:var(--muted)}
 @keyframes fadeUp{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:translateY(0)}}
 .scroll-hint{position:absolute;bottom:24px;left:50%;transform:translateX(-50%);color:var(--muted);font-size:12px;display:flex;flex-direction:column;align-items:center;gap:6px;animation:fadeUp 1s 1s both}
-.scroll-hint .mouse{width:22px;height:34px;border:2px solid rgba(255,255,255,.25);border-radius:12px;position:relative}
+.scroll-hint .mouse{width:22px;height:34px;border:2px solid rgba(31,74,94,.3);border-radius:12px;position:relative}
 .scroll-hint .mouse::after{content:"";position:absolute;left:50%;top:6px;width:3px;height:7px;border-radius:3px;background:var(--muted);transform:translateX(-50%);animation:wheel 1.6s infinite}
 @keyframes wheel{0%{opacity:1;top:6px}100%{opacity:0;top:16px}}
 
 /* ===== 作业卡片 ===== */
 section.works{max-width:var(--maxw);margin:0 auto;padding:30px 24px 60px}
 .sec-head{text-align:center;margin-bottom:44px}
-.sec-head .tag{display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:2px;color:var(--accent);border:1px solid rgba(109,139,255,.35);background:rgba(109,139,255,.08);padding:5px 14px;border-radius:99px;margin-bottom:14px}
+.sec-head .tag{display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:2px;color:var(--accent2);border:1px solid rgba(56,189,248,.4);background:rgba(56,189,248,.1);padding:5px 14px;border-radius:99px;margin-bottom:14px}
 .sec-head h2{font-size:clamp(24px,4vw,34px);font-weight:800}
 .sec-head p{color:var(--muted);font-size:15px;margin-top:8px}
 
-.work-card{position:relative;display:block;text-decoration:none;color:var(--text);border:1px solid var(--panel-border);border-radius:22px;background:var(--panel);overflow:hidden;margin-bottom:26px;transition:transform .35s cubic-bezier(.2,.8,.3,1),border-color .35s,box-shadow .35s}
-.work-card:hover{transform:translateY(-6px);border-color:var(--c,var(--accent));box-shadow:0 22px 60px -20px var(--c,var(--accent))}
+.work-card{position:relative;display:block;text-decoration:none;color:var(--text);border:1px solid var(--panel-border);border-radius:22px;background:var(--panel);overflow:hidden;margin-bottom:26px;transition:transform .35s cubic-bezier(.2,.8,.3,1),border-color .35s,box-shadow .35s;box-shadow:0 4px 20px rgba(31,74,94,.06)}
+.work-card:hover{transform:translateY(-6px);border-color:var(--c,var(--accent));box-shadow:0 22px 50px -20px var(--c,var(--accent))}
 .work-card::before{content:"";position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--c),transparent 85%)}
 .work-card .glow{position:absolute;width:360px;height:360px;border-radius:50%;filter:blur(90px);background:var(--c);opacity:0;transition:opacity .4s;top:-140px;right:-100px;pointer-events:none}
 .work-card:hover .glow{opacity:.15}
@@ -90,7 +93,7 @@ section.works{max-width:var(--maxw);margin:0 auto;padding:30px 24px 60px}
 .work-body .sub{color:var(--c);font-size:13px;font-weight:700;letter-spacing:1px;margin-bottom:10px}
 .work-body p{color:var(--muted);font-size:14.5px;max-width:560px}
 .work-meta{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
-.work-meta span{font-size:12px;color:var(--muted);border:1px solid var(--panel-border);background:rgba(255,255,255,.04);padding:4px 12px;border-radius:99px}
+.work-meta span{font-size:12px;color:var(--muted);border:1px solid var(--panel-border);background:rgba(56,189,248,.05);padding:4px 12px;border-radius:99px}
 .work-arrow{font-size:30px;color:var(--c);transition:transform .3s}
 .work-card:hover .work-arrow{transform:translateX(6px)}
 
@@ -181,6 +184,6 @@ const rObs = new IntersectionObserver(es => es.forEach(e => {
 }), {threshold:.12});
 document.querySelectorAll('.reveal').forEach(el => rObs.observe(el));
 </script>
-<style>.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease}.reveal.in{opacity:1;transform:none}nav.scrolled{border-bottom-color:var(--panel-border);background:rgba(10,14,23,.85)}</style>
+<style>.reveal{opacity:0;transform:translateY(30px);transition:opacity .7s ease,transform .7s ease}.reveal.in{opacity:1;transform:none}nav.scrolled{border-bottom-color:var(--panel-border);background:rgba(255,255,255,.9)}</style>
 </body>
 </html>
